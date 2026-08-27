@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tienda</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1 id="brandName">Tienda</h1>
+  <div class="topbar-actions" id="topbarActions">
+    <!-- se completa por JS -->
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs" id="categoryTabs"></div>
+  <div id="productList" class="loading">Cargando catálogo...</div>
+</div>
+
+<button class="cart-fab" id="cartFab">
+  🛒 <span id="cartFabText">0 productos</span>
+</button>
+
+<!-- MODAL: CARRITO -->
+<div class="modal-overlay" id="cartModalOverlay">
+  <div class="modal">
+    <h2>Tu pedido</h2>
+    <div id="cartLines"></div>
+    <div class="cart-total-row">
+      <span>Total</span>
+      <span id="cartTotal">$0</span>
+    </div>
+    <div class="field" style="margin-top:16px;">
+      <label for="notaPedido">Nota para el pedido (opcional)</label>
+      <input type="text" id="notaPedido" placeholder="Ej: entregar después de las 18hs">
+    </div>
+    <button class="btn" id="checkoutBtn" style="width:100%; margin-top:8px;">Confirmar y enviar por WhatsApp</button>
+    <button class="btn btn-outline" id="closeCartBtn" style="width:100%; margin-top:8px;">Seguir comprando</button>
+  </div>
+</div>
+
+<!-- MODAL: LOGIN / REGISTRO -->
+<div class="modal-overlay" id="authModalOverlay">
+  <div class="modal">
+    <div class="tabs">
+      <div class="tab active" id="tabLogin">Iniciar sesión</div>
+      <div class="tab" id="tabRegister">Registrarme</div>
+    </div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Contraseña</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <div class="error-text" id="loginError"></div>
+      <button class="btn" type="submit" style="width:100%;">Ingresar</button>
+    </form>
+
+    <form id="registerForm" style="display:none;">
+      <div class="field">
+        <label for="regNombre">Nombre y apellido</label>
+        <input type="text" id="regNombre" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="regTelefono">Teléfono</label>
+        <input type="tel" id="regTelefono" required autocomplete="tel" placeholder="11 5555 5555">
+      </div>
+      <div class="field">
+        <label for="regEmail">Email</label>
+        <input type="email" id="regEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="regPassword">Contraseña</label>
+        <input type="password" id="regPassword" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="error-text" id="registerError"></div>
+      <button class="btn" type="submit" style="width:100%;">Crear cuenta</button>
+    </form>
+
+    <button class="btn btn-outline" id="closeAuthBtn" style="width:100%; margin-top:10px;">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="store.js"></script>
+</body>
+</html>

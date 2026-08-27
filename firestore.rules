@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ⚠️ Repetí acá los mismos emails que pusiste en config.js → APP_CONFIG.adminEmails
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email in ["dueño@ejemplo.com"];
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Catálogo: cualquiera lo puede leer (incluso sin loguearse). Solo el admin lo edita.
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Clientes: cada uno lee/edita su propio perfil. El admin puede leer todos.
+    match /customers/{customerId} {
+      allow read: if isSignedIn() && (request.auth.uid == customerId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == customerId;
+      allow update: if isSignedIn() && (request.auth.uid == customerId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Pedidos: el cliente crea y lee solo los propios. El admin lee y edita todos (para marcar confirmado, etc).
+    match /orders/{orderId} {
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}
