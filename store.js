@@ -344,6 +344,7 @@ loginForm.onsubmit = async (e) => {
     await signInWithEmailAndPassword(auth, email, password);
     authModalOverlay.classList.remove("open");
   } catch (err) {
+    console.error("Error de login:", err);
     loginError.textContent = traducirErrorAuth(err);
   }
 };
@@ -362,6 +363,7 @@ forgotPasswordBtn.onclick = async () => {
     await sendPasswordResetEmail(auth, email);
     showToast("Te mandamos un email para restablecer tu contraseña.");
   } catch (err) {
+    console.error("Error al enviar el reset de contraseña:", err);
     loginError.textContent = traducirErrorAuth(err);
   } finally {
     forgotPasswordBtn.disabled = false;
@@ -387,6 +389,7 @@ registerForm.onsubmit = async (e) => {
     });
     authModalOverlay.classList.remove("open");
   } catch (err) {
+    console.error("Error de registro:", err);
     registerError.textContent = traducirErrorAuth(err);
   }
 };
@@ -398,7 +401,11 @@ function traducirErrorAuth(err) {
   if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";
   if (code.includes("wrong-password") || code.includes("invalid-credential")) return "Contraseña incorrecta.";
   if (code.includes("user-not-found")) return "No existe una cuenta con ese email.";
-  return "Ocurrió un error. Probá de nuevo.";
+  if (code.includes("too-many-requests")) return "Probaste varias veces seguidas y Firebase lo bloqueó un rato por seguridad. Esperá unos minutos y probá de nuevo.";
+  if (code.includes("network-request-failed")) return "Falló la conexión con Firebase. Revisá tu internet.";
+  if (code.includes("operation-not-allowed")) return "El login por email/contraseña no está habilitado en Firebase (Authentication → Sign-in method).";
+  if (code.includes("unauthorized-domain")) return "Este sitio no está autorizado en Firebase (Authentication → Settings → Authorized domains).";
+  return `Ocurrió un error (${code || "sin código"}). Probá de nuevo.`;
 }
 
 // ---------- auth state ----------
