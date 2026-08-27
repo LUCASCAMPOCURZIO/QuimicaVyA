@@ -9,7 +9,10 @@
 <body>
 
 <div class="topbar">
-  <h1>Panel de administración</h1>
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Logo" class="brand-logo">
+    <h1>Panel de administración</h1>
+  </div>
   <div class="topbar-actions">
     <a href="index.html" class="btn btn-outline btn-sm">Ver tienda</a>
     <button class="btn btn-outline btn-sm" id="logoutBtn">Salir</button>
@@ -77,6 +80,11 @@
         <div class="field">
           <label for="pUnidad">Unidad (opcional, ej: "x 5 litros")</label>
           <input type="text" id="pUnidad">
+        </div>
+        <div class="field">
+          <label for="pImagen">URL de la foto (opcional)</label>
+          <input type="url" id="pImagen" placeholder="https://...">
+          <div class="hint-text" style="margin-top:6px;">Subí la foto a algún lugar (Google Fotos, Imgur, WhatsApp Web, etc.), copiá el link de la imagen y pegalo acá.</div>
         </div>
         <button class="btn" type="submit" style="width:100%;">Agregar al catálogo</button>
       </form>

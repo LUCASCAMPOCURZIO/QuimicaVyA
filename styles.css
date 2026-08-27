@@ -1,32 +1,23 @@
 :root {
-  --bg: #f4f5f7;
-  --bg-elev: #ffffff;
-  --text: #1a1d23;
-  --text-dim: #6b7280;
-  --border: #e3e5ea;
-  --accent: #1f6feb;
-  --accent-text: #ffffff;
-  --success: #1a9e5c;
-  --danger: #d64545;
-  --warning: #c47f17;
-  --radius: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14161a;
-    --bg-elev: #1e2127;
-    --text: #f1f2f4;
-    --text-dim: #9aa0aa;
-    --border: #2b2f36;
-    --accent: #4c8dff;
-    --accent-text: #0b0d10;
-    --success: #34c780;
-    --danger: #ff6b6b;
-    --warning: #ffb84d;
-    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-  }
+  /* paleta de marca V&A Química — tomada del logo (verde / amarillo / negro) */
+  --bg: #0c0f0d;
+  --bg-elev: #171b18;
+  --bg-elev-2: #1f2420;
+  --text: #f5f7f3;
+  --text-dim: #a9b0a5;
+  --border: #2a2f2a;
+  --green: #34c759;
+  --green-dark: #1f9e42;
+  --yellow: #ffd400;
+  --blue: #2ea3e0;
+  --accent: var(--green);
+  --accent-text: #06170c;
+  --success: #34c759;
+  --danger: #ff5c5c;
+  --warning: var(--yellow);
+  --radius: 16px;
+  --shadow: 0 4px 16px rgba(0,0,0,0.35);
+  --font-display: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -39,7 +30,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--accent); }
+a { color: var(--green); }
 
 .container {
   max-width: 960px;
@@ -47,6 +38,7 @@ a { color: var(--accent); }
   padding: 16px;
 }
 
+/* ---------- topbar ---------- */
 .topbar {
   position: sticky;
   top: 0;
@@ -55,14 +47,34 @@ a { color: var(--accent); }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  background: #000000;
+  border-bottom: 3px solid var(--green);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  height: 42px;
+  width: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .topbar h1 {
-  font-size: 18px;
+  font-size: 19px;
   margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(90deg, var(--green) 0%, var(--yellow) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .topbar-actions {
@@ -71,23 +83,61 @@ a { color: var(--accent); }
   gap: 10px;
 }
 
+/* ---------- hero ---------- */
+.hero {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(52,199,89,0.35), transparent 55%),
+    radial-gradient(circle at 85% 0%, rgba(255,212,0,0.25), transparent 50%),
+    #000000;
+  padding: 34px 16px 28px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.hero-title .highlight {
+  background: linear-gradient(90deg, var(--green) 0%, var(--yellow) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- botones ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 11px 18px;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: var(--accent);
+  background: var(--green);
   color: var(--accent-text);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
 
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-outline {
@@ -96,9 +146,11 @@ a { color: var(--accent); }
   color: var(--text);
 }
 
+.btn-yellow { background: var(--yellow); color: #241d00; }
 .btn-danger { background: var(--danger); color: #fff; }
-.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn-sm { padding: 7px 13px; font-size: 13px; }
 
+/* ---------- tarjetas ---------- */
 .card {
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -107,29 +159,60 @@ a { color: var(--accent); }
 }
 
 .section-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 24px 0 10px;
-  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 800;
+  margin: 26px 0 10px;
+  color: var(--green);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
 }
 
 .product-card {
-  padding: 14px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.product-name { font-weight: 600; font-size: 15px; }
-.product-price { color: var(--accent); font-weight: 700; font-size: 15px; }
+.product-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--green);
+}
+
+.product-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: linear-gradient(135deg, #1a2e1f, #262100);
+  display: block;
+}
+
+.product-image-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  background: linear-gradient(135deg, #16321d, #2a2400);
+  color: var(--green);
+}
+
+.product-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.product-name { font-weight: 700; font-size: 15px; }
+.product-price { color: var(--yellow); font-weight: 800; font-size: 16px; }
 .product-unit { color: var(--text-dim); font-size: 12px; }
 
 .qty-row {
@@ -142,7 +225,8 @@ a { color: var(--accent); }
 .qty-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin-left: auto;
 }
 
 .qty-btn {
@@ -150,7 +234,7 @@ a { color: var(--accent); }
   height: 30px;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-elev-2);
   color: var(--text);
   font-size: 16px;
   cursor: pointer;
@@ -159,19 +243,22 @@ a { color: var(--accent); }
   justify-content: center;
 }
 
-.qty-value { min-width: 20px; text-align: center; font-weight: 600; }
+.qty-btn:active { transform: scale(0.92); }
 
+.qty-value { min-width: 20px; text-align: center; font-weight: 700; }
+
+/* ---------- carrito flotante ---------- */
 .cart-fab {
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 30;
-  padding: 14px 20px;
+  padding: 15px 22px;
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-text);
-  font-weight: 700;
-  box-shadow: var(--shadow);
+  background: linear-gradient(90deg, var(--green), var(--green-dark));
+  color: #06170c;
+  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(52,199,89,0.4);
   border: none;
   cursor: pointer;
   display: none;
@@ -179,10 +266,11 @@ a { color: var(--accent); }
 
 .cart-fab.visible { display: flex; align-items: center; gap: 8px; }
 
+/* ---------- modales ---------- */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.6);
   display: none;
   align-items: flex-end;
   justify-content: center;
@@ -197,16 +285,17 @@ a { color: var(--accent); }
   max-width: 480px;
   max-height: 88vh;
   overflow-y: auto;
-  border-radius: 16px 16px 0 0;
-  padding: 20px;
+  border-radius: 20px 20px 0 0;
+  padding: 22px;
+  border-top: 3px solid var(--green);
 }
 
 @media (min-width: 640px) {
   .modal-overlay { align-items: center; }
-  .modal { border-radius: 16px; }
+  .modal { border-radius: 20px; border-top: 1px solid var(--border); border: 1px solid var(--border); border-top: 3px solid var(--green); }
 }
 
-.modal h2 { margin-top: 0; font-size: 18px; }
+.modal h2 { margin-top: 0; font-size: 19px; }
 
 .field { margin-bottom: 14px; }
 .field label {
@@ -220,11 +309,16 @@ a { color: var(--accent); }
 .field input, .field select {
   width: 100%;
   padding: 11px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-elev-2);
   color: var(--text);
   font-size: 15px;
+}
+
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--green);
 }
 
 .cart-line {
@@ -241,11 +335,12 @@ a { color: var(--accent); }
 .cart-total-row {
   display: flex;
   justify-content: space-between;
-  font-weight: 700;
-  font-size: 17px;
+  font-weight: 800;
+  font-size: 18px;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
+  color: var(--yellow);
 }
 
 .empty-state {
@@ -254,30 +349,31 @@ a { color: var(--accent); }
   color: var(--text-dim);
 }
 
+/* ---------- tabs ---------- */
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
   margin-bottom: 4px;
 }
 
 .tab {
-  padding: 8px 14px;
+  padding: 9px 16px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--bg-elev);
   color: var(--text-dim);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .tab.active {
-  background: var(--accent);
-  color: var(--accent-text);
-  border-color: var(--accent);
+  background: var(--green);
+  color: #06170c;
+  border-color: var(--green);
 }
 
 .error-text { color: var(--danger); font-size: 13px; margin-top: 6px; }
@@ -296,7 +392,7 @@ a { color: var(--accent); }
 }
 
 .order-date { font-size: 13px; color: var(--text-dim); }
-.order-total { font-weight: 700; }
+.order-total { font-weight: 800; color: var(--yellow); }
 
 .badge {
   display: inline-block;
@@ -308,8 +404,8 @@ a { color: var(--accent); }
   letter-spacing: 0.03em;
 }
 
-.badge-pending { background: rgba(196,127,23,0.15); color: var(--warning); }
-.badge-confirmed { background: rgba(26,158,92,0.15); color: var(--success); }
+.badge-pending { background: rgba(255,212,0,0.15); color: var(--yellow); }
+.badge-confirmed { background: rgba(52,199,89,0.18); color: var(--green); }
 
 .stat-grid {
   display: grid;
@@ -321,14 +417,15 @@ a { color: var(--accent); }
 .stat-card {
   padding: 14px;
   text-align: left;
+  border-top: 3px solid var(--green);
 }
 
-.stat-value { font-size: 22px; font-weight: 800; }
+.stat-value { font-size: 22px; font-weight: 800; color: var(--yellow); }
 .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
 
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
-th { color: var(--text-dim); font-size: 12px; text-transform: uppercase; }
+th { color: var(--green); font-size: 12px; text-transform: uppercase; }
 
 .collapsible-header {
   display: flex;
@@ -352,16 +449,17 @@ th { color: var(--text-dim); font-size: 12px; text-transform: uppercase; }
   bottom: 90px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--text);
-  color: var(--bg);
-  padding: 10px 18px;
+  background: var(--yellow);
+  color: #241d00;
+  padding: 11px 20px;
   border-radius: 999px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   z-index: 60;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
+  box-shadow: var(--shadow);
 }
 
 .toast.show { opacity: 1; }

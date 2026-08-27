@@ -28,9 +28,13 @@ Copiá `firestore.rules` en Firebase Console → Firestore Database → Reglas (
 
 No hace falta cargar nada a mano en Firestore: una vez que entrás a `admin.html` con el email admin, la pestaña **Catálogo** te deja agregar productos (nombre, categoría, precio, unidad) directo desde ahí.
 
-## 5. Hosting
+## 5. Hosting (GitHub + Vercel)
 
-Como con AS13, subílo a Cloudflare Pages / Netlify / Vercel (son solo archivos estáticos, no necesita build). Firebase Hosting también sirve si preferís tenerlo todo en un solo lugar.
+1. Creá un repo nuevo en GitHub (ej: `distribuidora-limpieza`) y subí todos estos archivos.
+2. En [vercel.com](https://vercel.com) → "Add New" → "Project" → importás ese repo.
+3. Es un sitio estático sin build: en la config del proyecto elegí Framework Preset **"Other"**, dejá el Build Command vacío y el Output Directory como `.` (raíz). Vercel debería detectarlo solo.
+4. Deploy → te da una URL (`algo.vercel.app`).
+5. De ahí en más, cada cambio que subas a GitHub (`git push`) se despliega solo — mismo flujo que usás con AS13OBJETIVOS.
 
 ## Cómo funciona el flujo
 
@@ -42,7 +46,7 @@ Como con AS13, subílo a Cloudflare Pages / Netlify / Vercel (son solo archivos 
 
 ## Estructura en Firestore
 
-- `products/{id}`: `{ nombre, categoria, precio, unidad, activo }`
+- `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo }`
 - `customers/{uid}`: `{ nombre, telefono, email, fechaAlta }`
 - `orders/{id}`: `{ customerId, customerNombre, customerEmail, items[], total, nota, estado, fecha }`
 
@@ -52,4 +56,4 @@ Como con AS13, subílo a Cloudflare Pages / Netlify / Vercel (son solo archivos 
 - No hay manejo de stock todavía (no se descuenta inventario). Si lo necesita, se puede agregar.
 - El carrito vive en memoria mientras el cliente navega (no se guarda si cierra la pestaña a mitad de compra). Se puede persistir si hace falta.
 - El WhatsApp es un link `wa.me` con el mensaje pre-armado — no hay integración con WhatsApp Business API (eso es otro nivel de complejidad/costo, normalmente no hace falta para este tamaño de negocio).
-- Fotos de producto: no las agregué todavía. Se puede sumar un campo `imagen` (URL) fácilmente si el cliente tiene fotos del catálogo.
+- Fotos de producto: ya se pueden cargar (campo "URL de la foto" al agregar un producto en `admin.html`). Hay que subir la foto a algún lugar que te dé un link directo a la imagen (Imgur, Google Fotos con "compartir públicamente", etc.) y pegar ese link — no se suben archivos directo a Firebase todavía.

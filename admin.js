@@ -189,10 +189,16 @@ function renderCatalogList() {
     const row = document.createElement("div");
     row.className = "card";
     row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;";
+    const thumbHtml = p.imagen
+      ? `<img src="${escapeHtml(p.imagen)}" alt="" style="width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;">`
+      : `<div style="width:44px; height:44px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--bg-elev-2); font-size:18px;">🧴</div>`;
     row.innerHTML = `
-      <div>
-        <div style="font-weight:600;">${escapeHtml(p.nombre)} ${p.activo === false ? '<span class="hint-text">(oculto)</span>' : ""}</div>
-        <div class="hint-text">${escapeHtml(p.categoria)} · ${APP_CONFIG.moneda}${formatNumber(p.precio)} ${p.unidad ? "· " + escapeHtml(p.unidad) : ""}</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        ${thumbHtml}
+        <div>
+          <div style="font-weight:600;">${escapeHtml(p.nombre)} ${p.activo === false ? '<span class="hint-text">(oculto)</span>' : ""}</div>
+          <div class="hint-text">${escapeHtml(p.categoria)} · ${APP_CONFIG.moneda}${formatNumber(p.precio)} ${p.unidad ? "· " + escapeHtml(p.unidad) : ""}</div>
+        </div>
       </div>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-outline btn-sm" data-action="toggle">${p.activo === false ? "Mostrar" : "Ocultar"}</button>
@@ -222,8 +228,9 @@ document.getElementById("productForm").addEventListener("submit", async (e) => {
   const categoria = document.getElementById("pCategoria").value;
   const precio = parseFloat(document.getElementById("pPrecio").value);
   const unidad = document.getElementById("pUnidad").value.trim();
+  const imagen = document.getElementById("pImagen").value.trim();
 
-  await addDoc(collection(db, "products"), { nombre, categoria, precio, unidad, activo: true });
+  await addDoc(collection(db, "products"), { nombre, categoria, precio, unidad, imagen, activo: true });
   showToast("Producto agregado");
   e.target.reset();
   await loadCatalog();

@@ -105,17 +105,24 @@ function renderProducts() {
   productList.innerHTML = "";
   visible.forEach((p) => {
     const qty = cart[p.id]?.cantidad || 0;
+    const imageHtml = p.imagen
+      ? `<img class="product-image" src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}" loading="lazy">`
+      : `<div class="product-image-placeholder">🧴</div>`;
+
     const card = document.createElement("div");
     card.className = "card product-card";
     card.innerHTML = `
-      <div class="product-name">${escapeHtml(p.nombre)}</div>
-      <div class="product-unit">${escapeHtml(p.unidad || "")}</div>
-      <div class="product-price">${APP_CONFIG.moneda}${formatNumber(p.precio)}</div>
-      <div class="qty-row">
-        <div class="qty-controls">
-          <button class="qty-btn" data-action="minus">−</button>
-          <span class="qty-value">${qty}</span>
-          <button class="qty-btn" data-action="plus">+</button>
+      ${imageHtml}
+      <div class="product-body">
+        <div class="product-name">${escapeHtml(p.nombre)}</div>
+        <div class="product-unit">${escapeHtml(p.unidad || "")}</div>
+        <div class="product-price">${APP_CONFIG.moneda}${formatNumber(p.precio)}</div>
+        <div class="qty-row">
+          <div class="qty-controls">
+            <button class="qty-btn" data-action="minus">−</button>
+            <span class="qty-value">${qty}</span>
+            <button class="qty-btn" data-action="plus">+</button>
+          </div>
         </div>
       </div>
     `;
