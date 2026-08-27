@@ -180,6 +180,7 @@ function renderProducts() {
 
     const card = document.createElement("div");
     card.className = "card product-card" + (sinStock ? " is-out" : "");
+    card.dataset.productId = p.id;
     card.innerHTML = `
       ${stockBadge}
       ${imageHtml}
@@ -207,6 +208,30 @@ function renderProducts() {
       card.querySelector(".product-image").onclick = () => openLightbox(p.imagen, p.nombre);
     }
     productList.appendChild(card);
+  });
+}
+
+// ---------- ir a un producto (desde una promo) ----------
+function goToProduct(productId) {
+  const producto = products.find((pr) => pr.id === productId && pr.activo !== false);
+  if (!producto) {
+    showToast("Ese producto ya no está disponible.");
+    return;
+  }
+  // resetea filtros para asegurarnos de que el producto quede visible
+  searchQuery = "";
+  searchInput.value = "";
+  clearSearchBtn.style.display = "none";
+  currentCategory = "Todos";
+  renderCategoryStrip();
+  renderProducts();
+
+  requestAnimationFrame(() => {
+    const card = productList.querySelector(`[data-product-id="${productId}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("highlight-pulse");
+    setTimeout(() => card.classList.remove("highlight-pulse"), 1800);
   });
 }
 
@@ -495,11 +520,25 @@ function renderPromoCarousel() {
   if (promoIndex >= activos.length) promoIndex = 0;
 
   promoTrack.innerHTML = activos.map((p) => `
-    <div class="promo-slide">
+    <div class="promo-slide${p.productId ? " clickable" : ""}" ${p.productId ? `data-product-id="${escapeHtml(p.productId)}"` : ""}>
       <img src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.texto || "Promo")}" loading="lazy">
       ${p.texto ? `<div class="promo-caption">${escapeHtml(p.texto)}</div>` : ""}
+      ${p.productId ? `<button type="button" class="promo-cta">¡Lo quiero! 🛒</button>` : ""}
     </div>
   `).join("");
+
+  promoTrack.querySelectorAll(".promo-slide[data-product-id]").forEach((slide) => {
+    const irAlProducto = () => goToProduct(slide.dataset.productId);
+    slide.addEventListener("click", (e) => {
+      if (e.target.closest(".promo-cta")) return; // el botón ya tiene su propio handler
+      irAlProducto();
+    });
+    const cta = slide.querySelector(".promo-cta");
+    if (cta) cta.addEventListener("click", (e) => {
+      e.stopPropagation();
+      irAlProducto();
+    });
+  });
 
   promoDots.innerHTML = activos.map((_, i) =>
     `<button type="button" class="promo-dot${i === promoIndex ? " active" : ""}" data-index="${i}" aria-label="Ir a promo ${i + 1}"></button>`

@@ -239,6 +239,8 @@ async function loadCatalog() {
   const snap = await getDocs(q);
   allProducts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   renderCatalogList();
+  populatePromoProductSelect();
+  renderPromoList(); // refresca el nombre del producto vinculado por si cambió
 }
 
 let editingProductId = null;
@@ -423,6 +425,25 @@ productForm.addEventListener("submit", async (e) => {
 });
 
 // ---------- promos del carrusel ----------
+function populatePromoProductSelect() {
+  const select = document.getElementById("promoProducto");
+  const previo = select.value;
+  const categoriasOrden = [...APP_CONFIG.categorias];
+  allProducts.forEach((p) => {
+    if (!categoriasOrden.includes(p.categoria)) categoriasOrden.push(p.categoria);
+  });
+  let optionsHtml = `<option value="">— No vincular a ningún producto —</option>`;
+  categoriasOrden.forEach((cat) => {
+    const productosCat = allProducts.filter((p) => p.categoria === cat);
+    if (productosCat.length === 0) return;
+    optionsHtml += `<optgroup label="${escapeHtml(cat)}">`;
+    optionsHtml += productosCat.map((p) => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
+    optionsHtml += `</optgroup>`;
+  });
+  select.innerHTML = optionsHtml;
+  if (previo && allProducts.some((p) => p.id === previo)) select.value = previo;
+}
+
 async function loadPromos() {
   const snap = await getDocs(collection(db, "promos"));
   allPromos = snap.docs
@@ -439,22 +460,25 @@ function renderPromoList() {
   }
   list.innerHTML = "";
   allPromos.forEach((p) => {
+    const productoVinculado = p.productId ? allProducts.find((prod) => prod.id === p.productId) : null;
     const row = document.createElement("div");
     row.className = "card";
-    row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;";
+    row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;";
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:10px; min-width:0;">
         <img src="${escapeHtml(p.imagen)}" alt="" style="width:64px; height:40px; border-radius:8px; object-fit:cover; flex-shrink:0;">
         <div style="min-width:0;">
           <div style="font-weight:600;">${p.texto ? escapeHtml(p.texto) : '<span class="hint-text">(sin texto)</span>'} ${p.activo === false ? '<span class="hint-text">(oculta)</span>' : ""}</div>
-          <div class="hint-text">Orden: ${p.orden || 0}</div>
+          <div class="hint-text">Orden: ${p.orden || 0}${productoVinculado ? " · lleva a: " + escapeHtml(productoVinculado.nombre) : (p.productId ? " · el producto vinculado ya no existe" : "")}</div>
         </div>
       </div>
       <div style="display:flex; gap:8px; flex-shrink:0;">
+        <button class="btn btn-outline btn-sm" data-action="edit">Editar</button>
         <button class="btn btn-outline btn-sm" data-action="toggle">${p.activo === false ? "Mostrar" : "Ocultar"}</button>
         <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
       </div>
     `;
+    row.querySelector('[data-action="edit"]').onclick = () => fillPromoFormForEdit(p);
     row.querySelector('[data-action="toggle"]').onclick = async () => {
       const nuevoEstado = p.activo === false ? true : false;
       await updateDoc(doc(db, "promos", p.id), { activo: nuevoEstado });
@@ -465,6 +489,7 @@ function renderPromoList() {
       if (!confirm("¿Eliminar esta promo del carrusel?")) return;
       await deleteDoc(doc(db, "promos", p.id));
       allPromos = allPromos.filter((x) => x.id !== p.id);
+      if (editingPromoId === p.id) cancelPromoEdit();
       renderPromoList();
       showToast("Promo eliminada");
     };
@@ -472,35 +497,86 @@ function renderPromoList() {
   });
 }
 
-document.getElementById("promoForm").addEventListener("submit", async (e) => {
+// ---------- edición de promo ----------
+let editingPromoId = null;
+const promoForm = document.getElementById("promoForm");
+const promoSubmitBtn = document.getElementById("promoSubmitBtn");
+const cancelPromoEditBtn = document.getElementById("cancelPromoEditBtn");
+const promoFormTitle = document.getElementById("promoFormTitle");
+const promoImagenPreview = document.getElementById("promoImagenPreview");
+
+function fillPromoFormForEdit(p) {
+  editingPromoId = p.id;
+  document.getElementById("promoEditId").value = p.id;
+  document.getElementById("promoTexto").value = p.texto || "";
+  document.getElementById("promoOrden").value = p.orden || 0;
+  document.getElementById("promoProducto").value = p.productId || "";
+  document.getElementById("promoImagenFile").value = "";
+  if (p.imagen) {
+    promoImagenPreview.src = p.imagen;
+    promoImagenPreview.style.display = "block";
+  } else {
+    promoImagenPreview.style.display = "none";
+  }
+  promoFormTitle.textContent = "Editando promo";
+  promoSubmitBtn.textContent = "Guardar cambios";
+  cancelPromoEditBtn.style.display = "inline-flex";
+  promoForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelPromoEdit() {
+  editingPromoId = null;
+  promoForm.reset();
+  document.getElementById("promoEditId").value = "";
+  promoImagenPreview.style.display = "none";
+  promoFormTitle.textContent = "Agregar promo";
+  promoSubmitBtn.textContent = "Agregar promo";
+  cancelPromoEditBtn.style.display = "none";
+}
+
+cancelPromoEditBtn.onclick = () => cancelPromoEdit();
+
+promoForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const file = document.getElementById("promoImagenFile").files[0];
   const texto = document.getElementById("promoTexto").value.trim();
+  const productId = document.getElementById("promoProducto").value;
   const ordenRaw = document.getElementById("promoOrden").value.trim();
   const orden = ordenRaw ? parseInt(ordenRaw, 10) : 0;
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  const textoOriginal = submitBtn.textContent;
+  const submitBtn = promoSubmitBtn;
 
-  if (!file) {
+  if (!editingPromoId && !file) {
     showToast("Elegí una imagen primero.");
     return;
   }
 
   try {
     submitBtn.disabled = true;
-    submitBtn.textContent = "Subiendo imagen...";
-    const imagen = await uploadImage(file, "promos");
-    await addDoc(collection(db, "promos"), { imagen, texto, orden, activo: true });
-    showToast("Promo agregada");
-    e.target.reset();
-    document.getElementById("promoImagenPreview").style.display = "none";
+
+    let imagen;
+    if (file) {
+      submitBtn.textContent = "Subiendo imagen...";
+      imagen = await uploadImage(file, "promos");
+    }
+
+    if (editingPromoId) {
+      const cambios = { texto, orden, productId: productId || "" };
+      if (imagen) cambios.imagen = imagen;
+      await updateDoc(doc(db, "promos", editingPromoId), cambios);
+      showToast("Promo actualizada");
+    } else {
+      await addDoc(collection(db, "promos"), { imagen, texto, orden, productId: productId || "", activo: true });
+      showToast("Promo agregada");
+    }
+
+    cancelPromoEdit();
     await loadPromos();
   } catch (err) {
-    console.error("Error al agregar promo:", err);
-    showToast("No se pudo subir la imagen. Probá de nuevo.");
+    console.error("Error al guardar la promo:", err);
+    showToast("No se pudo guardar la promo. Probá de nuevo.");
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = textoOriginal;
+    submitBtn.textContent = editingPromoId ? "Guardar cambios" : "Agregar promo";
   }
 });
 

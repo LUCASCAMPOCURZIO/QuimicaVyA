@@ -42,7 +42,11 @@ La imagen se comprime y redimensiona automáticamente en el navegador antes de s
 
 ## Carrusel de promos
 
-En `admin.html` → pestaña **"Promos"** cargás imágenes (idealmente horizontales/apaisadas) con un texto opcional superpuesto y un orden. Van pasando solas cada ~4 segundos en la home, con flechas y puntitos para navegar a mano, y también se puede deslizar con el dedo en el celular. Si no cargaste ninguna promo, esa sección directamente no aparece — no queda un hueco vacío.
+En `admin.html` → pestaña **"Promos"** cargás imágenes (idealmente horizontales/apaisadas) con un texto opcional superpuesto y un orden. Van pasando solas cada ~4 segundos en la home, con flechas y puntitos para navegar a mano, y también se puede deslizar con el dedo en el celular. Si no cargaste ninguna promo, esa sección directamente no aparece — no queda un hueco vacío. Cada promo también tiene botón **"Editar"** para corregir la foto, el texto, el orden o el producto vinculado sin tener que borrarla y recargarla.
+
+### Vincular una promo a un producto
+
+Al cargar o editar una promo podés elegir, de forma opcional, a qué producto del catálogo corresponde. Si la vinculás, en la tienda esa promo muestra un botón **"¡Lo quiero!"** sobre la imagen (y la imagen entera también es clickeable) — al tocarlo, la página baja sola hasta ese producto en el catálogo y lo resalta un instante con un brillo verde, para que el cliente lo vea al toque y pueda ajustar la cantidad y confirmar el pedido. Si no vinculás ningún producto, la promo se muestra igual que antes, sin botón.
 
 ## 4. Cargar el catálogo
 
@@ -86,7 +90,7 @@ En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís 
 - `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo, stock }` (`stock` es opcional — si no está, el producto no tiene control de stock)
 - `customers/{uid}`: `{ nombre, telefono, email, fechaAlta }`
 - `orders/{id}`: `{ customerId, customerNombre, customerEmail, items[], total, nota, estado, fecha }`
-- `promos/{id}`: `{ imagen, texto, orden, activo }`
+- `promos/{id}`: `{ imagen, texto, orden, activo, productId }` (`productId` es opcional — si está, la promo lleva a ese producto en la tienda)
 
 ## Cosas para charlar con el cliente / posibles mejoras después
 
