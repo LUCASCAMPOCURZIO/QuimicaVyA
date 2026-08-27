@@ -11,6 +11,10 @@ let currentUser = null;
 let currentCategory = "Todos";
 let searchQuery = "";
 let pendingCheckout = false; // si el usuario apretó "confirmar pedido" antes de estar logueado
+let promos = [];
+let promoIndex = 0;
+let promoTimer = null;
+let promoTouchStartX = null;
 
 // ---------- refs UI ----------
 const brandName = document.getElementById("brandName");
@@ -41,6 +45,11 @@ const closeAuthBtn = document.getElementById("closeAuthBtn");
 const toast = document.getElementById("toast");
 const searchInput = document.getElementById("searchInput");
 const clearSearchBtn = document.getElementById("clearSearchBtn");
+const promoCarousel = document.getElementById("promoCarousel");
+const promoTrack = document.getElementById("promoTrack");
+const promoDots = document.getElementById("promoDots");
+const promoPrev = document.getElementById("promoPrev");
+const promoNext = document.getElementById("promoNext");
 
 brandName.textContent = APP_CONFIG.nombreNegocio;
 footerBrandName.textContent = APP_CONFIG.nombreNegocio;
@@ -390,6 +399,105 @@ onSnapshot(productsQuery, (snap) => {
 }, (err) => {
   console.error(err);
   productList.innerHTML = `<div class="empty-state">No se pudo cargar el catálogo. Revisá la configuración de Firebase en config.js.</div>`;
+});
+
+// ---------- carrusel de promos ----------
+function activePromos() {
+  return promos.filter((p) => p.activo !== false && p.imagen);
+}
+
+function renderPromoCarousel() {
+  const activos = activePromos();
+  if (activos.length === 0) {
+    promoCarousel.style.display = "none";
+    stopPromoAutoplay();
+    return;
+  }
+  promoCarousel.style.display = "block";
+  if (promoIndex >= activos.length) promoIndex = 0;
+
+  promoTrack.innerHTML = activos.map((p) => `
+    <div class="promo-slide">
+      <img src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.texto || "Promo")}" loading="lazy">
+      ${p.texto ? `<div class="promo-caption">${escapeHtml(p.texto)}</div>` : ""}
+    </div>
+  `).join("");
+
+  promoDots.innerHTML = activos.map((_, i) =>
+    `<button type="button" class="promo-dot${i === promoIndex ? " active" : ""}" data-index="${i}" aria-label="Ir a promo ${i + 1}"></button>`
+  ).join("");
+  promoDots.querySelectorAll(".promo-dot").forEach((dot) => {
+    dot.onclick = () => {
+      goToPromo(Number(dot.dataset.index));
+      resetPromoAutoplay();
+    };
+  });
+
+  const showArrows = activos.length > 1;
+  promoPrev.style.display = showArrows ? "flex" : "none";
+  promoNext.style.display = showArrows ? "flex" : "none";
+
+  updatePromoPosition();
+  startPromoAutoplay(activos.length);
+}
+
+function updatePromoPosition() {
+  promoTrack.style.transform = `translateX(-${promoIndex * 100}%)`;
+  promoDots.querySelectorAll(".promo-dot").forEach((dot, i) => dot.classList.toggle("active", i === promoIndex));
+}
+
+function goToPromo(i) {
+  const count = activePromos().length;
+  if (count === 0) return;
+  promoIndex = ((i % count) + count) % count;
+  updatePromoPosition();
+}
+
+function startPromoAutoplay(count) {
+  stopPromoAutoplay();
+  if (count <= 1) return;
+  promoTimer = setInterval(() => goToPromo(promoIndex + 1), 4200);
+}
+
+function stopPromoAutoplay() {
+  if (promoTimer) clearInterval(promoTimer);
+  promoTimer = null;
+}
+
+function resetPromoAutoplay() {
+  startPromoAutoplay(activePromos().length);
+}
+
+promoPrev.onclick = () => {
+  goToPromo(promoIndex - 1);
+  resetPromoAutoplay();
+};
+promoNext.onclick = () => {
+  goToPromo(promoIndex + 1);
+  resetPromoAutoplay();
+};
+
+promoTrack.addEventListener("touchstart", (e) => {
+  promoTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+promoTrack.addEventListener("touchend", (e) => {
+  if (promoTouchStartX === null) return;
+  const delta = e.changedTouches[0].clientX - promoTouchStartX;
+  if (Math.abs(delta) > 40) {
+    goToPromo(promoIndex + (delta < 0 ? 1 : -1));
+    resetPromoAutoplay();
+  }
+  promoTouchStartX = null;
+});
+
+onSnapshot(collection(db, "promos"), (snap) => {
+  promos = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  renderPromoCarousel();
+}, (err) => {
+  console.error(err);
 });
 
 // ---------- buscador ----------

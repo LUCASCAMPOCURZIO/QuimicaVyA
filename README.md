@@ -2,7 +2,7 @@
 
 App de 3 partes, todo en HTML/JS + Firebase (mismo enfoque que veníamos usando en AS13):
 
-- `index.html` — tienda pública: home tipo landing (hero, franja de categorías con íconos, buscador, catálogo, sección "por qué pedirnos", footer), carrito, checkout que manda el pedido por WhatsApp
+- `index.html` — tienda pública: home tipo landing (hero, carrusel de promos, franja de categorías con íconos, buscador, catálogo, sección "por qué pedirnos", footer), carrito, checkout que manda el pedido por WhatsApp
 - `cuenta.html` — historial de pedidos del cliente logueado
 - `admin.html` — panel del dueño: estadísticas, pedidos, alta/baja de productos
 
@@ -27,6 +27,12 @@ Las estadísticas del hero (cantidad de productos y categorías) son reales — 
 ## 3. Reglas de seguridad
 
 Copiá `firestore.rules` en Firebase Console → Firestore Database → Reglas (o hacé deploy con la CLI). **Importante:** el email de `adminEmails` tiene que estar repetido ahí adentro también (está comentado en el archivo).
+
+⚠️ Si ya tenías las reglas viejas publicadas (de antes de que existiera el carrusel de promos), tenés que volver a pegar el `firestore.rules` actualizado y publicar de nuevo — si no, cargar promos desde `admin.html` va a fallar con un error de permisos.
+
+## Carrusel de promos
+
+En `admin.html` → pestaña **"Promos"** cargás imágenes (idealmente horizontales/apaisadas) con un texto opcional superpuesto y un orden. Van pasando solas cada ~4 segundos en la home, con flechas y puntitos para navegar a mano, y también se puede deslizar con el dedo en el celular. Si no cargaste ninguna promo, esa sección directamente no aparece — no queda un hueco vacío.
 
 ## 4. Cargar el catálogo
 

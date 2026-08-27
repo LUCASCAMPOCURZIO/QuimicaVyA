@@ -22,7 +22,7 @@ tabs.forEach((tab) => {
   tab.onclick = () => {
     tabs.forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
-    ["panelStats", "panelOrders", "panelCatalog"].forEach((id) => {
+    ["panelStats", "panelOrders", "panelCatalog", "panelPromos"].forEach((id) => {
       document.getElementById(id).style.display = id === tab.dataset.panel ? "block" : "none";
     });
   };
@@ -42,9 +42,10 @@ onAuthStateChanged(auth, async (user) => {
 
 let allOrders = [];
 let allProducts = [];
+let allPromos = [];
 
 async function loadEverything() {
-  await Promise.all([loadOrders(), loadCatalog()]);
+  await Promise.all([loadOrders(), loadCatalog(), loadPromos()]);
   renderStats();
   populateCategorySelect();
 }
@@ -234,6 +235,69 @@ document.getElementById("productForm").addEventListener("submit", async (e) => {
   showToast("Producto agregado");
   e.target.reset();
   await loadCatalog();
+});
+
+// ---------- promos del carrusel ----------
+async function loadPromos() {
+  const snap = await getDocs(collection(db, "promos"));
+  allPromos = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  renderPromoList();
+}
+
+function renderPromoList() {
+  const list = document.getElementById("promoList");
+  if (allPromos.length === 0) {
+    list.innerHTML = `<div class="empty-state">Todavía no cargaste promos. El carrusel no se muestra en la tienda hasta que haya al menos una.</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  allPromos.forEach((p) => {
+    const row = document.createElement("div");
+    row.className = "card";
+    row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;";
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <img src="${escapeHtml(p.imagen)}" alt="" style="width:64px; height:40px; border-radius:8px; object-fit:cover; flex-shrink:0;">
+        <div style="min-width:0;">
+          <div style="font-weight:600;">${p.texto ? escapeHtml(p.texto) : '<span class="hint-text">(sin texto)</span>'} ${p.activo === false ? '<span class="hint-text">(oculta)</span>' : ""}</div>
+          <div class="hint-text">Orden: ${p.orden || 0}</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-shrink:0;">
+        <button class="btn btn-outline btn-sm" data-action="toggle">${p.activo === false ? "Mostrar" : "Ocultar"}</button>
+        <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
+      </div>
+    `;
+    row.querySelector('[data-action="toggle"]').onclick = async () => {
+      const nuevoEstado = p.activo === false ? true : false;
+      await updateDoc(doc(db, "promos", p.id), { activo: nuevoEstado });
+      p.activo = nuevoEstado;
+      renderPromoList();
+    };
+    row.querySelector('[data-action="delete"]').onclick = async () => {
+      if (!confirm("¿Eliminar esta promo del carrusel?")) return;
+      await deleteDoc(doc(db, "promos", p.id));
+      allPromos = allPromos.filter((x) => x.id !== p.id);
+      renderPromoList();
+      showToast("Promo eliminada");
+    };
+    list.appendChild(row);
+  });
+}
+
+document.getElementById("promoForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const imagen = document.getElementById("promoImagen").value.trim();
+  const texto = document.getElementById("promoTexto").value.trim();
+  const ordenRaw = document.getElementById("promoOrden").value.trim();
+  const orden = ordenRaw ? parseInt(ordenRaw, 10) : 0;
+
+  await addDoc(collection(db, "promos"), { imagen, texto, orden, activo: true });
+  showToast("Promo agregada");
+  e.target.reset();
+  await loadPromos();
 });
 
 // ---------- utils ----------

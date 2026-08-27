@@ -18,6 +18,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Promos del carrusel de la home: cualquiera las puede leer. Solo el admin las edita.
+    match /promos/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Clientes: cada uno lee/edita su propio perfil. El admin puede leer todos.
     match /customers/{customerId} {
       allow read: if isSignedIn() && (request.auth.uid == customerId || isAdmin());
