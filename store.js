@@ -67,11 +67,12 @@ waFloat.href = consultaGeneralUrl;
 
 // ---------- toast ----------
 let toastTimer;
-function showToast(msg) {
-  toast.textContent = msg;
+function showToast(msg, { html = false, duration = 2600 } = {}) {
+  if (html) toast.innerHTML = msg;
+  else toast.textContent = msg;
   toast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), duration);
 }
 
 // ---------- topbar según sesión ----------
@@ -336,6 +337,17 @@ checkoutBtn.onclick = async () => {
 async function doCheckout() {
   checkoutBtn.disabled = true;
   checkoutBtn.textContent = "Enviando...";
+
+  // Abrimos la pestaña de WhatsApp YA, en el mismo instante del click (vacía por ahora) — si
+  // esperamos a que termine de guardarse el pedido en Firestore antes de abrirla, la mayoría de
+  // los navegadores (sobre todo en el celular) la bloquean como si fuera un popup no pedido.
+  let waWindow = null;
+  try {
+    waWindow = window.open("", "_blank");
+  } catch (err) {
+    waWindow = null;
+  }
+
   try {
     const nota = document.getElementById("notaPedido").value.trim();
     const items = Object.values(cart).map(({ producto, cantidad }) => ({
@@ -360,7 +372,11 @@ async function doCheckout() {
 
     const mensaje = buildWhatsAppMessage(items, total, nota, currentUser.displayName);
     const url = `https://wa.me/${APP_CONFIG.whatsappNumero}?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, "_blank");
+
+    const abrioAutomatico = waWindow && !waWindow.closed;
+    if (abrioAutomatico) {
+      waWindow.location.href = url;
+    }
 
     // Descuenta stock solo de los productos que lo tienen controlado (no bloquea el pedido si falla)
     Object.values(cart).forEach(({ producto, cantidad }) => {
@@ -374,9 +390,20 @@ async function doCheckout() {
     renderCartFab();
     cartModalOverlay.classList.remove("open");
     document.getElementById("notaPedido").value = "";
-    showToast("¡Pedido enviado! Confirmá por WhatsApp.");
+
+    if (abrioAutomatico) {
+      showToast("¡Pedido enviado! Confirmá por WhatsApp.");
+    } else {
+      // El navegador bloqueó la apertura automática (pasa sobre todo en Safari/iPhone). El pedido
+      // ya quedó guardado igual — le dejamos un link para que lo abra a mano.
+      showToast(
+        `¡Pedido guardado! <a href="${url}" target="_blank" style="text-decoration:underline; font-weight:800;">Tocá acá para enviarlo por WhatsApp</a>`,
+        { html: true, duration: 9000 }
+      );
+    }
   } catch (err) {
     console.error(err);
+    if (waWindow && !waWindow.closed) waWindow.close(); // no dejamos una pestaña en blanco colgada
     showToast("Hubo un error al enviar el pedido. Probá de nuevo.");
   } finally {
     checkoutBtn.disabled = false;

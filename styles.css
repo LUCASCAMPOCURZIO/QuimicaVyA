@@ -900,6 +900,11 @@ th { color: var(--green); font-size: 12px; text-transform: uppercase; }
   pointer-events: none;
   transition: opacity 0.2s ease;
   box-shadow: var(--shadow);
+  max-width: min(92vw, 380px);
+  text-align: center;
+  line-height: 1.4;
 }
 
-.toast.show { opacity: 1; }
+.toast.show { opacity: 1; pointer-events: auto; }
+
+.toast a { color: inherit; }
