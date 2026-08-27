@@ -168,9 +168,10 @@ function renderOrdersAdmin() {
       <div class="collapsible-body" style="display:none; padding-top:10px;">
         ${itemsHtml}
         ${order.nota ? `<div class="hint-text" style="margin-top:8px;">Nota: ${escapeHtml(order.nota)}</div>` : ""}
-        <div style="margin-top:10px; display:flex; gap:8px;">
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-sm" data-action="confirm">Marcar confirmado</button>
           <button class="btn btn-outline btn-sm" data-action="pending">Marcar pendiente</button>
+          <button class="btn btn-danger btn-sm" data-action="delete" style="margin-left:auto;">Eliminar</button>
         </div>
       </div>
     `;
@@ -193,6 +194,16 @@ function renderOrdersAdmin() {
       renderOrdersAdmin();
       renderStats();
       showToast("Pedido marcado como pendiente");
+    });
+    card.querySelector('[data-action="delete"]').addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const quien = order.customerNombre || order.customerEmail || "este cliente";
+      if (!confirm(`¿Eliminar el pedido de ${quien} por ${APP_CONFIG.moneda}${formatNumber(order.total)}? Esta acción no se puede deshacer.`)) return;
+      await deleteDoc(doc(db, "orders", order.id));
+      allOrders = allOrders.filter((o) => o.id !== order.id);
+      renderOrdersAdmin();
+      renderStats();
+      showToast("Pedido eliminado");
     });
     list.appendChild(card);
   });
