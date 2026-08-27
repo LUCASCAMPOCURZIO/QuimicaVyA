@@ -266,6 +266,7 @@ a { color: var(--green); }
   object-fit: cover;
   background: linear-gradient(135deg, #1a2e1f, #262100);
   display: block;
+  cursor: zoom-in;
 }
 
 .product-image-placeholder {
@@ -371,6 +372,63 @@ a { color: var(--green); }
 }
 
 .modal h2 { margin-top: 0; font-size: 19px; }
+
+/* ---------- lightbox de imagen ---------- */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 5, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 28px 20px;
+}
+
+.lightbox-overlay.open { display: flex; }
+
+.lightbox-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 92vw;
+}
+
+.lightbox-content img {
+  max-width: 92vw;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  background: var(--bg-elev);
+}
+
+.lightbox-caption {
+  margin-top: 14px;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  font-size: 15px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
 
 .field { margin-bottom: 14px; }
 .field label {

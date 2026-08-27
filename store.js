@@ -51,6 +51,10 @@ const promoTrack = document.getElementById("promoTrack");
 const promoDots = document.getElementById("promoDots");
 const promoPrev = document.getElementById("promoPrev");
 const promoNext = document.getElementById("promoNext");
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxClose = document.getElementById("lightboxClose");
 
 brandName.textContent = APP_CONFIG.nombreNegocio;
 footerBrandName.textContent = APP_CONFIG.nombreNegocio;
@@ -199,9 +203,31 @@ function renderProducts() {
       card.querySelector('[data-action="minus"]').onclick = () => changeQty(p, -1);
       card.querySelector('[data-action="plus"]').onclick = () => changeQty(p, 1);
     }
+    if (p.imagen) {
+      card.querySelector(".product-image").onclick = () => openLightbox(p.imagen, p.nombre);
+    }
     productList.appendChild(card);
   });
 }
+
+// ---------- lightbox de imagen ----------
+function openLightbox(src, caption) {
+  lightboxImg.src = src;
+  lightboxImg.alt = caption || "";
+  lightboxCaption.textContent = caption || "";
+  lightboxOverlay.classList.add("open");
+}
+function closeLightbox() {
+  lightboxOverlay.classList.remove("open");
+  lightboxImg.src = "";
+}
+lightboxClose.onclick = closeLightbox;
+lightboxOverlay.addEventListener("click", (e) => {
+  if (e.target === lightboxOverlay) closeLightbox();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && lightboxOverlay.classList.contains("open")) closeLightbox();
+});
 
 function changeQty(product, delta) {
   const current = cart[product.id]?.cantidad || 0;
