@@ -2,9 +2,13 @@
 
 App de 3 partes, todo en HTML/JS + Firebase (mismo enfoque que veníamos usando en AS13):
 
-- `index.html` — tienda pública: catálogo, carrito, checkout que manda el pedido por WhatsApp
+- `index.html` — tienda pública: home tipo landing (hero, franja de categorías con íconos, buscador, catálogo, sección "por qué pedirnos", footer), carrito, checkout que manda el pedido por WhatsApp
 - `cuenta.html` — historial de pedidos del cliente logueado
 - `admin.html` — panel del dueño: estadísticas, pedidos, alta/baja de productos
+
+### Sobre la sección "¿Por qué pedirnos?" y las estadísticas del hero
+
+Las estadísticas del hero (cantidad de productos y categorías) son reales — se calculan solas a partir de lo que cargues en el catálogo, no hay que tocar nada. Los 4 textos de "¿Por qué pedirnos?" describen cómo funciona la herramienta (son ciertos apenas la usás), no son data del negocio en sí — si en algún momento el cliente quiere sumar algo específico de su negocio (años en el rubro, zona de entrega, medios de pago que acepta, etc.) hay que agregarlo a mano en `index.html`, ese contenido no lo puedo inventar yo.
 
 ## 1. Crear el proyecto de Firebase
 
@@ -38,7 +42,7 @@ No hace falta cargar nada a mano en Firestore: una vez que entrás a `admin.html
 
 ## Cómo funciona el flujo
 
-1. El cliente entra a la tienda, arma su carrito.
+1. El cliente entra a la tienda, busca productos (hay un buscador arriba del catálogo que filtra por nombre o categoría, sin importar mayúsculas/tildes) o navega por categoría, y arma su carrito.
 2. Al confirmar, si no está logueado le pide crear cuenta o iniciar sesión (Firebase Auth, usuario y contraseña).
 3. Se guarda el pedido en Firestore (colección `orders`, con `estado: "pendiente"`) y se abre WhatsApp con el mensaje del pedido ya armado, para que el cliente lo mande y ahí definan forma de pago y entrega.
 4. El cliente puede ver su historial en `cuenta.html`.

@@ -9,13 +9,20 @@ let products = [];
 let cart = {}; // { productId: { producto, cantidad } }
 let currentUser = null;
 let currentCategory = "Todos";
+let searchQuery = "";
 let pendingCheckout = false; // si el usuario apretó "confirmar pedido" antes de estar logueado
 
 // ---------- refs UI ----------
 const brandName = document.getElementById("brandName");
+const footerBrandName = document.getElementById("footerBrandName");
 const topbarActions = document.getElementById("topbarActions");
-const categoryTabs = document.getElementById("categoryTabs");
+const categoryStrip = document.getElementById("categoryStrip");
 const productList = document.getElementById("productList");
+const statProductCount = document.getElementById("statProductCount");
+const statCategoryCount = document.getElementById("statCategoryCount");
+const heroWhatsappBtn = document.getElementById("heroWhatsappBtn");
+const footerWhatsappLink = document.getElementById("footerWhatsappLink");
+const waFloat = document.getElementById("waFloat");
 const cartFab = document.getElementById("cartFab");
 const cartFabText = document.getElementById("cartFabText");
 const cartModalOverlay = document.getElementById("cartModalOverlay");
@@ -32,9 +39,17 @@ const loginError = document.getElementById("loginError");
 const registerError = document.getElementById("registerError");
 const closeAuthBtn = document.getElementById("closeAuthBtn");
 const toast = document.getElementById("toast");
+const searchInput = document.getElementById("searchInput");
+const clearSearchBtn = document.getElementById("clearSearchBtn");
 
 brandName.textContent = APP_CONFIG.nombreNegocio;
+footerBrandName.textContent = APP_CONFIG.nombreNegocio;
 document.title = APP_CONFIG.nombreNegocio;
+
+const consultaGeneralUrl = `https://wa.me/${APP_CONFIG.whatsappNumero}?text=${encodeURIComponent("Hola! Quería hacer una consulta.")}`;
+heroWhatsappBtn.href = consultaGeneralUrl;
+footerWhatsappLink.href = consultaGeneralUrl;
+waFloat.href = consultaGeneralUrl;
 
 // ---------- toast ----------
 let toastTimer;
@@ -75,29 +90,61 @@ function renderTopbar() {
 }
 
 // ---------- catálogo ----------
-function renderCategoryTabs() {
+const CATEGORY_ICONS = [
+  [["lavado", "ropa"], "🧺"],
+  [["cocina"], "🍳"],
+  [["desengras"], "🧴"],
+  [["descart"], "🧻"],
+  [["hogar"], "🏠"],
+  [["baño", "bano"], "🚿"],
+  [["perfum", "aroma"], "🌸"],
+];
+
+function getCategoryIcon(cat) {
+  if (cat === "Todos") return "🗂️";
+  const norm = normalize(cat);
+  const match = CATEGORY_ICONS.find(([keywords]) => keywords.some((k) => norm.includes(k)));
+  return match ? match[1] : "🧽";
+}
+
+function renderCategoryStrip() {
   const cats = ["Todos", ...APP_CONFIG.categorias];
-  categoryTabs.innerHTML = "";
+  categoryStrip.innerHTML = "";
   cats.forEach((cat) => {
-    const tab = document.createElement("div");
-    tab.className = "tab" + (cat === currentCategory ? " active" : "");
-    tab.textContent = cat;
-    tab.onclick = () => {
+    const card = document.createElement("div");
+    card.className = "cat-card" + (cat === currentCategory && !searchQuery ? " active" : "");
+    card.innerHTML = `<div class="cat-ic">${getCategoryIcon(cat)}</div><span>${escapeHtml(cat)}</span>`;
+    card.onclick = () => {
       currentCategory = cat;
-      renderCategoryTabs();
+      if (searchQuery) {
+        searchQuery = "";
+        searchInput.value = "";
+        clearSearchBtn.style.display = "none";
+      }
+      renderCategoryStrip();
       renderProducts();
     };
-    categoryTabs.appendChild(tab);
+    categoryStrip.appendChild(card);
   });
 }
 
 function renderProducts() {
-  const visible = products.filter(
-    (p) => p.activo !== false && (currentCategory === "Todos" || p.categoria === currentCategory)
-  );
+  let visible;
+  if (searchQuery) {
+    const q = normalize(searchQuery);
+    visible = products.filter(
+      (p) => p.activo !== false && (normalize(p.nombre).includes(q) || normalize(p.categoria).includes(q))
+    );
+  } else {
+    visible = products.filter(
+      (p) => p.activo !== false && (currentCategory === "Todos" || p.categoria === currentCategory)
+    );
+  }
 
   if (visible.length === 0) {
-    productList.innerHTML = `<div class="empty-state">No hay productos en esta categoría todavía.</div>`;
+    productList.innerHTML = searchQuery
+      ? `<div class="empty-state">No encontramos productos para "${escapeHtml(searchQuery)}". Probá con otra palabra.</div>`
+      : `<div class="empty-state">No hay productos en esta categoría todavía.</div>`;
     return;
   }
 
@@ -337,11 +384,34 @@ onAuthStateChanged(auth, async (user) => {
 const productsQuery = query(collection(db, "products"), orderBy("categoria"));
 onSnapshot(productsQuery, (snap) => {
   products = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  renderCategoryTabs();
+  renderCategoryStrip();
   renderProducts();
+  renderHeroStats();
 }, (err) => {
   console.error(err);
   productList.innerHTML = `<div class="empty-state">No se pudo cargar el catálogo. Revisá la configuración de Firebase en config.js.</div>`;
+});
+
+// ---------- buscador ----------
+searchInput.addEventListener("input", () => {
+  searchQuery = searchInput.value.trim();
+  clearSearchBtn.style.display = searchQuery ? "flex" : "none";
+  renderProducts();
+});
+searchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    searchQuery = "";
+    searchInput.value = "";
+    clearSearchBtn.style.display = "none";
+    renderProducts();
+  }
+});
+clearSearchBtn.addEventListener("click", () => {
+  searchQuery = "";
+  searchInput.value = "";
+  clearSearchBtn.style.display = "none";
+  renderProducts();
+  searchInput.focus();
 });
 
 // ---------- utils ----------
@@ -353,6 +423,14 @@ function escapeHtml(str) {
   div.textContent = str ?? "";
   return div.innerHTML;
 }
+function normalize(str) {
+  return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function renderHeroStats() {
+  const activos = products.filter((p) => p.activo !== false);
+  statProductCount.textContent = activos.length;
+  statCategoryCount.textContent = new Set(activos.map((p) => p.categoria)).size;
+}
 
-renderCategoryTabs();
+renderCategoryStrip();
 renderTopbar();
