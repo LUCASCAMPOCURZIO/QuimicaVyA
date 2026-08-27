@@ -1,6 +1,6 @@
 import {
   auth, db, APP_CONFIG,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
   collection, doc, addDoc, setDoc, getDoc, getDocs, query, orderBy, onSnapshot, serverTimestamp,
 } from "./firebase-init.js";
 
@@ -40,6 +40,7 @@ const tabRegister = document.getElementById("tabRegister");
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 const loginError = document.getElementById("loginError");
+const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
 const registerError = document.getElementById("registerError");
 const closeAuthBtn = document.getElementById("closeAuthBtn");
 const toast = document.getElementById("toast");
@@ -344,6 +345,27 @@ loginForm.onsubmit = async (e) => {
     authModalOverlay.classList.remove("open");
   } catch (err) {
     loginError.textContent = traducirErrorAuth(err);
+  }
+};
+
+forgotPasswordBtn.onclick = async () => {
+  loginError.textContent = "";
+  const email = document.getElementById("loginEmail").value.trim();
+  if (!email) {
+    loginError.textContent = "Escribí primero tu email arriba, y después tocá este botón.";
+    return;
+  }
+  forgotPasswordBtn.disabled = true;
+  const textoOriginal = forgotPasswordBtn.textContent;
+  forgotPasswordBtn.textContent = "Enviando...";
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showToast("Te mandamos un email para restablecer tu contraseña.");
+  } catch (err) {
+    loginError.textContent = traducirErrorAuth(err);
+  } finally {
+    forgotPasswordBtn.disabled = false;
+    forgotPasswordBtn.textContent = textoOriginal;
   }
 };
 

@@ -54,6 +54,10 @@ No hace falta cargar nada a mano en Firestore: una vez que entrás a `admin.html
 4. El cliente puede ver su historial en `cuenta.html`.
 5. El dueño entra a `admin.html` y ve: estadísticas (pedidos totales, facturado, clientes distintos, ticket promedio, ranking de clientes y de productos), la lista completa de pedidos (puede marcarlos como confirmados), y gestiona el catálogo.
 
+## ¿Y si un cliente (o vos) se olvida la contraseña?
+
+En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís el email arriba y lo tocás — Firebase manda automáticamente un mail con un link para elegir una contraseña nueva. No hace falta que hagas nada manual en la consola. Ese email lo manda Firebase con una dirección genérica (`noreply@tu-proyecto.firebaseapp.com`); si en algún momento querés que el mail tenga el nombre del negocio, se puede personalizar en Firebase Console → Authentication → Templates.
+
 ## Estructura en Firestore
 
 - `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo }`
