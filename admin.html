@@ -33,6 +33,7 @@
     <div class="tab" data-panel="panelOrders">Pedidos</div>
     <div class="tab" data-panel="panelCatalog">Catálogo</div>
     <div class="tab" data-panel="panelPromos">Promos</div>
+    <div class="tab" data-panel="panelCategories">Categorías</div>
   </div>
 
   <!-- ESTADÍSTICAS -->
@@ -40,7 +41,7 @@
     <div class="stat-grid" id="statGrid"></div>
 
     <div class="section-title">Clientes que más piden</div>
-    <div class="card" style="padding:8px 16px;">
+    <div class="card" style="padding:8px 16px; overflow-x:auto;">
       <table id="topCustomersTable">
         <thead><tr><th>Cliente</th><th>Pedidos</th><th>Total gastado</th></tr></thead>
         <tbody></tbody>
@@ -48,7 +49,7 @@
     </div>
 
     <div class="section-title">Productos más pedidos</div>
-    <div class="card" style="padding:8px 16px;">
+    <div class="card" style="padding:8px 16px; overflow-x:auto;">
       <table id="topProductsTable">
         <thead><tr><th>Producto</th><th>Cantidad pedida</th><th>Total facturado</th></tr></thead>
         <tbody></tbody>
@@ -140,6 +141,33 @@
 
     <div class="section-title">Promos cargadas</div>
     <div id="promoList" class="loading">Cargando...</div>
+  </div>
+
+  <!-- CATEGORÍAS -->
+  <div id="panelCategories" style="display:none;">
+    <div class="card" style="padding:16px; margin-bottom:20px;">
+      <div class="section-title" style="margin-top:0;" id="categoryFormTitle">Agregar categoría</div>
+      <form id="categoryForm">
+        <input type="hidden" id="catEditId" value="">
+        <div class="field">
+          <label for="catNombre">Nombre</label>
+          <input type="text" id="catNombre" required placeholder="Ej: Insecticidas">
+        </div>
+        <div class="field">
+          <label>Ícono</label>
+          <div class="icon-picker" id="iconPicker"></div>
+          <input type="hidden" id="catIcono">
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" type="submit" style="flex:1;" id="categorySubmitBtn">Agregar categoría</button>
+          <button class="btn btn-outline" type="button" id="cancelCategoryEditBtn" style="display:none;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="section-title">Categorías cargadas</div>
+    <div class="hint-text" style="margin-bottom:10px;">Usá las flechas para cambiar el orden en que aparecen en la tienda.</div>
+    <div id="categoryList" class="loading">Cargando...</div>
   </div>
 
 </div>

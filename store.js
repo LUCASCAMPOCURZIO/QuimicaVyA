@@ -104,25 +104,18 @@ function renderTopbar() {
 }
 
 // ---------- catálogo ----------
-const CATEGORY_ICONS = [
-  [["lavado", "ropa"], "🧺"],
-  [["cocina"], "🍳"],
-  [["desengras"], "🧴"],
-  [["descart"], "🧻"],
-  [["hogar"], "🏠"],
-  [["baño", "bano"], "🚿"],
-  [["perfum", "aroma"], "🌸"],
-];
+// Las categorías (nombre + ícono + orden) se cargan de Firestore — se administran
+// desde admin.html → pestaña "Categorías". "Todos" es un filtro fijo, no una categoría real.
+let categories = [];
 
 function getCategoryIcon(cat) {
   if (cat === "Todos") return "🗂️";
-  const norm = normalize(cat);
-  const match = CATEGORY_ICONS.find(([keywords]) => keywords.some((k) => norm.includes(k)));
-  return match ? match[1] : "🧽";
+  const encontrada = categories.find((c) => c.nombre === cat);
+  return encontrada?.icono || "🧽";
 }
 
 function renderCategoryStrip() {
-  const cats = ["Todos", ...APP_CONFIG.categorias];
+  const cats = ["Todos", ...categories.map((c) => c.nombre)];
   categoryStrip.innerHTML = "";
   cats.forEach((cat) => {
     const card = document.createElement("div");
@@ -141,6 +134,14 @@ function renderCategoryStrip() {
     categoryStrip.appendChild(card);
   });
 }
+
+onSnapshot(query(collection(db, "categories"), orderBy("orden")), (snap) => {
+  categories = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  renderCategoryStrip();
+  renderProducts();
+}, (err) => {
+  console.error(err);
+});
 
 function renderProducts() {
   let visible;

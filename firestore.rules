@@ -34,6 +34,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Categorías del catálogo (nombre + ícono + orden): cualquiera las puede leer. Solo el admin las edita.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Clientes: cada uno lee/edita su propio perfil. El admin puede leer todos.
     match /customers/{customerId} {
       allow read: if isSignedIn() && (request.auth.uid == customerId || isAdmin());

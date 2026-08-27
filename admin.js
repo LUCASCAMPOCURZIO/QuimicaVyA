@@ -78,13 +78,30 @@ function wirePreview(fileInputId, previewImgId) {
 wirePreview("pImagenFile", "pImagenPreview");
 wirePreview("promoImagenFile", "promoImagenPreview");
 
+// ---------- selector de ícono para categorías ----------
+const ICONOS_CATEGORIA = ["🧴", "🧽", "🧼", "🧻", "🪣", "🧹", "🧺", "🚿", "🛁", "🏠", "🍳", "🍽️", "💧", "✨", "🌸", "👕", "🧤", "♻️", "🐾", "🚗", "📦", "🛒", "🧪", "🌿"];
+
+function renderIconPicker() {
+  const picker = document.getElementById("iconPicker");
+  const hiddenInput = document.getElementById("catIcono");
+  picker.innerHTML = ICONOS_CATEGORIA.map((ic) => `<button type="button" class="icon-option" data-icon="${ic}">${ic}</button>`).join("");
+  picker.querySelectorAll(".icon-option").forEach((btn) => {
+    btn.onclick = () => {
+      picker.querySelectorAll(".icon-option").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      hiddenInput.value = btn.dataset.icon;
+    };
+  });
+}
+renderIconPicker();
+
 // ---------- tabs ----------
 const tabs = document.querySelectorAll(".tabs .tab");
 tabs.forEach((tab) => {
   tab.onclick = () => {
     tabs.forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
-    ["panelStats", "panelOrders", "panelCatalog", "panelPromos"].forEach((id) => {
+    ["panelStats", "panelOrders", "panelCatalog", "panelPromos", "panelCategories"].forEach((id) => {
       document.getElementById(id).style.display = id === tab.dataset.panel ? "block" : "none";
     });
   };
@@ -105,11 +122,12 @@ onAuthStateChanged(auth, async (user) => {
 let allOrders = [];
 let allProducts = [];
 let allPromos = [];
+let allCategories = [];
 
 async function loadEverything() {
+  await loadCategories(); // primero: catálogo y promos agrupan usando las categorías cargadas
   await Promise.all([loadOrders(), loadCatalog(), loadPromos()]);
   renderStats();
-  populateCategorySelect();
 }
 
 // ---------- pedidos ----------
@@ -231,7 +249,9 @@ function renderStats() {
 // ---------- catálogo ----------
 function populateCategorySelect() {
   const select = document.getElementById("pCategoria");
-  select.innerHTML = APP_CONFIG.categorias.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  const previo = select.value;
+  select.innerHTML = allCategories.map((c) => `<option value="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</option>`).join("");
+  if (previo && allCategories.some((c) => c.nombre === previo)) select.value = previo;
 }
 
 async function loadCatalog() {
@@ -253,8 +273,9 @@ function renderCatalogList() {
   }
   list.innerHTML = "";
 
-  // Agrupado por categoría (en el orden de config.js, y cualquier categoría vieja al final)
-  const categoriasOrden = [...APP_CONFIG.categorias];
+  // Agrupado por categoría (en el orden que configuraste en la pestaña "Categorías",
+  // y cualquier categoría vieja/borrada que todavía tenga productos, al final)
+  const categoriasOrden = allCategories.map((c) => c.nombre);
   allProducts.forEach((p) => {
     if (!categoriasOrden.includes(p.categoria)) categoriasOrden.push(p.categoria);
   });
@@ -428,7 +449,7 @@ productForm.addEventListener("submit", async (e) => {
 function populatePromoProductSelect() {
   const select = document.getElementById("promoProducto");
   const previo = select.value;
-  const categoriasOrden = [...APP_CONFIG.categorias];
+  const categoriasOrden = allCategories.map((c) => c.nombre);
   allProducts.forEach((p) => {
     if (!categoriasOrden.includes(p.categoria)) categoriasOrden.push(p.categoria);
   });
@@ -577,6 +598,189 @@ promoForm.addEventListener("submit", async (e) => {
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = editingPromoId ? "Guardar cambios" : "Agregar promo";
+  }
+});
+
+// ---------- categorías ----------
+
+// Íconos por defecto SOLO para la migración automática la primera vez que se abre este panel
+// después de esta actualización (antes las categorías vivían fijas en config.js).
+const ICONO_MIGRACION = [
+  [["lavado", "ropa"], "🧺"],
+  [["cocina"], "🍳"],
+  [["desengras"], "🧴"],
+  [["descart"], "🧻"],
+  [["hogar"], "🏠"],
+  [["baño", "bano"], "🚿"],
+  [["perfum", "aroma"], "🌸"],
+];
+function iconoDeMigracion(nombre) {
+  const norm = (nombre || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const match = ICONO_MIGRACION.find(([keywords]) => keywords.some((k) => norm.includes(k)));
+  return match ? match[1] : ICONOS_CATEGORIA[0];
+}
+
+async function loadCategories() {
+  const catsQuery = query(collection(db, "categories"), orderBy("orden"));
+  let snap = await getDocs(catsQuery);
+
+  // Migración automática (se hace una sola vez): si en Firestore todavía no hay categorías
+  // pero en config.js sí había una lista vieja, las importamos para no perder lo que ya tenías cargado.
+  if (snap.empty && Array.isArray(APP_CONFIG.categorias) && APP_CONFIG.categorias.length > 0) {
+    for (let i = 0; i < APP_CONFIG.categorias.length; i++) {
+      const nombre = APP_CONFIG.categorias[i];
+      await addDoc(collection(db, "categories"), { nombre, icono: iconoDeMigracion(nombre), orden: i });
+    }
+    snap = await getDocs(catsQuery);
+  }
+
+  allCategories = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  renderCategoryList();
+  populateCategorySelect();
+}
+
+function renderCategoryList() {
+  const list = document.getElementById("categoryList");
+  if (allCategories.length === 0) {
+    list.innerHTML = `<div class="empty-state">Todavía no cargaste categorías.</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  allCategories.forEach((c, i) => {
+    const cantidadProductos = allProducts.filter((p) => p.categoria === c.nombre).length;
+    const row = document.createElement("div");
+    row.className = "card";
+    row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;";
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:var(--bg-elev-2); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">${c.icono || "🧽"}</div>
+        <div>
+          <div style="font-weight:600;">${escapeHtml(c.nombre)}</div>
+          <div class="hint-text">${cantidadProductos} producto${cantidadProductos === 1 ? "" : "s"}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" data-action="up" style="padding:4px 10px;" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button class="btn btn-outline btn-sm" data-action="down" style="padding:4px 10px;" ${i === allCategories.length - 1 ? "disabled" : ""}>↓</button>
+        <button class="btn btn-outline btn-sm" data-action="edit">Editar</button>
+        <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
+      </div>
+    `;
+    row.querySelector('[data-action="up"]').onclick = () => moveCategory(i, -1);
+    row.querySelector('[data-action="down"]').onclick = () => moveCategory(i, 1);
+    row.querySelector('[data-action="edit"]').onclick = () => fillCategoryFormForEdit(c);
+    row.querySelector('[data-action="delete"]').onclick = async () => {
+      const aviso = cantidadProductos > 0
+        ? `Hay ${cantidadProductos} producto${cantidadProductos === 1 ? "" : "s"} cargado${cantidadProductos === 1 ? "" : "s"} en "${c.nombre}". Si la eliminás, esos productos van a seguir existiendo pero esta categoría no va a aparecer más como filtro en la tienda. ¿Eliminar igual?`
+        : `¿Eliminar la categoría "${c.nombre}"?`;
+      if (!confirm(aviso)) return;
+      await deleteDoc(doc(db, "categories", c.id));
+      allCategories = allCategories.filter((x) => x.id !== c.id);
+      if (editingCategoryId === c.id) cancelCategoryEdit();
+      renderCategoryList();
+      populateCategorySelect();
+      showToast("Categoría eliminada");
+    };
+    list.appendChild(row);
+  });
+}
+
+async function moveCategory(index, delta) {
+  const target = index + delta;
+  if (target < 0 || target >= allCategories.length) return;
+  const a = allCategories[index];
+  const b = allCategories[target];
+  const ordenA = a.orden ?? index;
+  const ordenB = b.orden ?? target;
+  await Promise.all([
+    updateDoc(doc(db, "categories", a.id), { orden: ordenB }),
+    updateDoc(doc(db, "categories", b.id), { orden: ordenA }),
+  ]);
+  a.orden = ordenB;
+  b.orden = ordenA;
+  [allCategories[index], allCategories[target]] = [allCategories[target], allCategories[index]];
+  renderCategoryList();
+}
+
+// ---------- edición de categoría ----------
+let editingCategoryId = null;
+const categoryForm = document.getElementById("categoryForm");
+const categorySubmitBtn = document.getElementById("categorySubmitBtn");
+const cancelCategoryEditBtn = document.getElementById("cancelCategoryEditBtn");
+const categoryFormTitle = document.getElementById("categoryFormTitle");
+
+function fillCategoryFormForEdit(c) {
+  editingCategoryId = c.id;
+  document.getElementById("catEditId").value = c.id;
+  document.getElementById("catNombre").value = c.nombre || "";
+  document.getElementById("catIcono").value = c.icono || "";
+  document.querySelectorAll("#iconPicker .icon-option").forEach((btn) => {
+    btn.classList.toggle("selected", btn.dataset.icon === c.icono);
+  });
+  categoryFormTitle.textContent = `Editando "${c.nombre}"`;
+  categorySubmitBtn.textContent = "Guardar cambios";
+  cancelCategoryEditBtn.style.display = "inline-flex";
+  categoryForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelCategoryEdit() {
+  editingCategoryId = null;
+  categoryForm.reset();
+  document.getElementById("catEditId").value = "";
+  document.getElementById("catIcono").value = "";
+  document.querySelectorAll("#iconPicker .icon-option").forEach((btn) => btn.classList.remove("selected"));
+  categoryFormTitle.textContent = "Agregar categoría";
+  categorySubmitBtn.textContent = "Agregar categoría";
+  cancelCategoryEditBtn.style.display = "none";
+}
+
+cancelCategoryEditBtn.onclick = () => cancelCategoryEdit();
+
+categoryForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nombre = document.getElementById("catNombre").value.trim();
+  const icono = document.getElementById("catIcono").value;
+  const submitBtn = categorySubmitBtn;
+
+  if (!icono) {
+    showToast("Elegí un ícono para la categoría.");
+    return;
+  }
+  const yaExiste = allCategories.some(
+    (c) => c.nombre.toLowerCase() === nombre.toLowerCase() && c.id !== editingCategoryId
+  );
+  if (yaExiste) {
+    showToast("Ya existe una categoría con ese nombre.");
+    return;
+  }
+
+  try {
+    submitBtn.disabled = true;
+
+    if (editingCategoryId) {
+      const nombreAnterior = allCategories.find((c) => c.id === editingCategoryId)?.nombre;
+      await updateDoc(doc(db, "categories", editingCategoryId), { nombre, icono });
+      // si cambió el nombre, actualizamos los productos que lo usaban para que no queden huérfanos
+      if (nombreAnterior && nombreAnterior !== nombre) {
+        const productosAfectados = allProducts.filter((p) => p.categoria === nombreAnterior);
+        await Promise.all(productosAfectados.map((p) => updateDoc(doc(db, "products", p.id), { categoria: nombre })));
+      }
+      showToast("Categoría actualizada");
+    } else {
+      const orden = allCategories.length ? Math.max(...allCategories.map((c) => c.orden ?? 0)) + 1 : 0;
+      await addDoc(collection(db, "categories"), { nombre, icono, orden });
+      showToast("Categoría agregada");
+    }
+
+    cancelCategoryEdit();
+    await loadCategories();
+    await loadCatalog(); // por si se renombró una categoría, refresca los productos ya agrupados
+  } catch (err) {
+    console.error("Error al guardar la categoría:", err);
+    showToast("No se pudo guardar la categoría. Probá de nuevo.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = editingCategoryId ? "Guardar cambios" : "Agregar categoría";
   }
 });
 

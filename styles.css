@@ -383,6 +383,35 @@ a { color: var(--green); }
 
 .modal h2 { margin-top: 0; font-size: 19px; }
 
+/* ---------- selector de ícono de categoría (panel admin) ---------- */
+.icon-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.icon-option {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-elev-2);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.icon-option:active { transform: scale(0.92); }
+
+.icon-option.selected {
+  border-color: var(--green);
+  background: rgba(52,199,89,0.18);
+}
+
 /* ---------- lightbox de imagen ---------- */
 .lightbox-overlay {
   position: fixed;
@@ -680,7 +709,7 @@ a { color: var(--green); }
 /* ---------- franja de categorías (catálogo) ---------- */
 .category-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 10px;
   margin-bottom: 18px;
 }
@@ -689,10 +718,11 @@ a { color: var(--green); }
   background: var(--bg-elev);
   border: 1.5px solid var(--border);
   border-radius: 14px;
-  padding: 14px 8px;
+  padding: 14px 6px;
   text-align: center;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease;
+  min-width: 0; /* permite que el texto se achique/parta en vez de desbordar la celda del grid */
 }
 
 .cat-card:hover { transform: translateY(-3px); }
@@ -706,10 +736,13 @@ a { color: var(--green); }
 
 .cat-card span {
   display: block;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-dim);
   line-height: 1.25;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .cat-card.active span { color: var(--green); }
