@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mis pedidos</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Logo" class="brand-logo">
+    <h1>Mis pedidos</h1>
+  </div>
+  <div class="topbar-actions">
+    <a href="index.html" class="btn btn-outline btn-sm">Volver a la tienda</a>
+    <button class="btn btn-outline btn-sm" id="logoutBtn">Salir</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="customerInfo" class="card" style="padding:16px; margin-bottom:20px;"></div>
+  <div class="section-title">Historial de pedidos</div>
+  <div id="ordersList" class="loading">Cargando...</div>
+</div>
+
+<script type="module" src="account.js"></script>
+</body>
+</html>

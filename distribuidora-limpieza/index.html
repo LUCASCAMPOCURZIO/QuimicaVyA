@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tienda</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Logo" class="brand-logo">
+    <h1 id="brandName">Tienda</h1>
+  </div>
+  <div class="topbar-actions" id="topbarActions">
+    <!-- se completa por JS -->
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-title">La limpieza de tu lugar, <span class="highlight">a un click</span> 🧼</p>
+    <p class="hero-subtitle">Elegí tus productos, armá el pedido y confirmalo directo por WhatsApp. Rápido, simple y sin vueltas.</p>
+    <div class="hero-ctas">
+      <a href="#catalogo" class="btn">Ver catálogo</a>
+      <a href="#" id="heroWhatsappBtn" class="btn btn-outline" target="_blank" rel="noopener">Hablanos por WhatsApp</a>
+    </div>
+    <div class="hero-stats">
+      <div><b id="statProductCount">–</b><span>Productos</span></div>
+      <div><b id="statCategoryCount">–</b><span>Categorías</span></div>
+      <div><b>100%</b><span>Pedidos por WhatsApp</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="container" id="catalogo">
+  <div class="search-box" id="searchBox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="¿Qué estás buscando? Ej: detergente, lavandina...">
+    <button type="button" id="clearSearchBtn" class="clear-search" style="display:none;" aria-label="Limpiar búsqueda">✕</button>
+  </div>
+  <div class="category-strip" id="categoryStrip"></div>
+  <div id="productList" class="loading">Cargando catálogo...</div>
+</div>
+
+<section class="values">
+  <div class="container">
+    <div class="section-title" style="margin-top:0;">¿Por qué pedirnos?</div>
+    <div class="values-grid">
+      <div class="card value-card">
+        <div class="value-ic">⚡</div>
+        <b>Pedís en minutos</b>
+        <span>Armá tu pedido y mandalo directo por WhatsApp, sin vueltas ni formularios largos.</span>
+      </div>
+      <div class="card value-card">
+        <div class="value-ic">🗂️</div>
+        <b>Historial siempre a mano</b>
+        <span>Entrá cuando quieras y volvé a ver todo lo que pediste antes.</span>
+      </div>
+      <div class="card value-card">
+        <div class="value-ic">🔄</div>
+        <b>Catálogo actualizado</b>
+        <span>Productos y precios al día, directo desde el distribuidor.</span>
+      </div>
+      <div class="card value-card">
+        <div class="value-ic">💬</div>
+        <b>Atención directa</b>
+        <span>Coordinás forma de pago y entrega charlando con el vendedor.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="brand">
+      <img src="assets/logo.jpg" alt="Logo" class="brand-logo">
+      <span id="footerBrandName" class="footer-brand-name">Tienda</span>
+    </div>
+    <a id="footerWhatsappLink" class="btn btn-yellow btn-sm" href="#" target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+  </div>
+</footer>
+
+<button class="cart-fab" id="cartFab">
+  🛒 <span id="cartFabText">0 productos</span>
+</button>
+
+<a href="#" id="waFloat" class="wa-float" target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp">💬</a>
+
+<!-- MODAL: CARRITO -->
+<div class="modal-overlay" id="cartModalOverlay">
+  <div class="modal">
+    <h2>Tu pedido</h2>
+    <div id="cartLines"></div>
+    <div class="cart-total-row">
+      <span>Total</span>
+      <span id="cartTotal">$0</span>
+    </div>
+    <div class="field" style="margin-top:16px;">
+      <label for="notaPedido">Nota para el pedido (opcional)</label>
+      <input type="text" id="notaPedido" placeholder="Ej: entregar después de las 18hs">
+    </div>
+    <button class="btn" id="checkoutBtn" style="width:100%; margin-top:8px;">Confirmar y enviar por WhatsApp</button>
+    <button class="btn btn-outline" id="closeCartBtn" style="width:100%; margin-top:8px;">Seguir comprando</button>
+  </div>
+</div>
+
+<!-- MODAL: LOGIN / REGISTRO -->
+<div class="modal-overlay" id="authModalOverlay">
+  <div class="modal">
+    <div class="tabs">
+      <div class="tab active" id="tabLogin">Iniciar sesión</div>
+      <div class="tab" id="tabRegister">Registrarme</div>
+    </div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Contraseña</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <div class="error-text" id="loginError"></div>
+      <button class="btn" type="submit" style="width:100%;">Ingresar</button>
+    </form>
+
+    <form id="registerForm" style="display:none;">
+      <div class="field">
+        <label for="regNombre">Nombre y apellido</label>
+        <input type="text" id="regNombre" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="regTelefono">Teléfono</label>
+        <input type="tel" id="regTelefono" required autocomplete="tel" placeholder="11 5555 5555">
+      </div>
+      <div class="field">
+        <label for="regEmail">Email</label>
+        <input type="email" id="regEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="regPassword">Contraseña</label>
+        <input type="password" id="regPassword" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="error-text" id="registerError"></div>
+      <button class="btn" type="submit" style="width:100%;">Crear cuenta</button>
+    </form>
+
+    <button class="btn btn-outline" id="closeAuthBtn" style="width:100%; margin-top:10px;">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="store.js"></script>
+</body>
+</html>
