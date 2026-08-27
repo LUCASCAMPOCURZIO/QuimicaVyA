@@ -46,7 +46,20 @@ En `admin.html` → pestaña **"Promos"** cargás imágenes (idealmente horizont
 
 ## 4. Cargar el catálogo
 
-No hace falta cargar nada a mano en Firestore: una vez que entrás a `admin.html` con el email admin, la pestaña **Catálogo** te deja agregar productos (nombre, categoría, precio, unidad) directo desde ahí.
+No hace falta cargar nada a mano en Firestore: una vez que entrás a `admin.html` con el email admin, la pestaña **Catálogo** te deja agregar productos (nombre, categoría, precio, unidad, foto y stock opcional) directo desde ahí. La lista queda agrupada por categoría para que sea fácil de recorrer, y cada producto tiene un botón **"Editar"** para corregir cualquier dato después (incluida la foto — si no elegís una nueva, se mantiene la que ya tenía).
+
+⚠️ Si ya tenías las reglas de Firestore publicadas de antes de este cambio, tenés que volver a pegar el `firestore.rules` actualizado y publicar de nuevo (ver sección 3) — si no, el descuento automático de stock al confirmar un pedido no va a funcionar.
+
+### Stock
+
+El campo "Stock" al cargar o editar un producto es opcional:
+
+- **Vacío** (como hasta ahora): el producto siempre figura disponible, sin límite.
+- **Con un número**: en la tienda se muestra un cartelito "¡Últimas N!" cuando queda poco (5 o menos), y "Sin stock" cuando llega a 0 — ahí el cliente ya no puede agregarlo al carrito. Cada vez que se confirma un pedido, el stock de esos productos se descuenta solo.
+
+Para cargar o corregir stock rápido sin entrar a editar todo el producto, en la lista del panel (pestaña Catálogo) cada producto con stock cargado tiene botones **−** / **+** al lado para ajustarlo a mano en el momento (por ejemplo, después de contar mercadería o reponer).
+
+Ojo con un detalle: el descuento de stock pasa apenas el cliente confirma el pedido y se abre WhatsApp — no espera a que se confirme el pago. Si un pedido termina cayéndose (el cliente se arrepiente, no contesta, etc.), hay que sumar el stock de vuelta a mano con el botón "+". Para este tamaño de negocio es la forma más simple; un control más estricto (reservar stock, liberarlo automáticamente, etc.) es un desarrollo más grande.
 
 ## 5. Hosting (GitHub + Vercel)
 
@@ -70,7 +83,7 @@ En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís 
 
 ## Estructura en Firestore
 
-- `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo }`
+- `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo, stock }` (`stock` es opcional — si no está, el producto no tiene control de stock)
 - `customers/{uid}`: `{ nombre, telefono, email, fechaAlta }`
 - `orders/{id}`: `{ customerId, customerNombre, customerEmail, items[], total, nota, estado, fecha }`
 - `promos/{id}`: `{ imagen, texto, orden, activo }`
@@ -78,7 +91,7 @@ En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís 
 ## Cosas para charlar con el cliente / posibles mejoras después
 
 - Hoy el precio es único para todos los clientes (así lo definimos). Si más adelante el cliente quiere precios diferenciados por comprador (típico en mayoristas), hay que sumar una colección de listas de precio — es un cambio de alcance, no de 5 minutos.
-- No hay manejo de stock todavía (no se descuenta inventario). Si lo necesita, se puede agregar.
+- El manejo de stock es intencionalmente simple (ver sección "Stock" más arriba): se descuenta al confirmar el pedido, no al confirmarse el pago. Si el negocio crece y hace falta algo más estricto (reservar stock, cancelaciones automáticas, etc.), es un desarrollo aparte.
 - El carrito vive en memoria mientras el cliente navega (no se guarda si cierra la pestaña a mitad de compra). Se puede persistir si hace falta.
 - El WhatsApp es un link `wa.me` con el mensaje pre-armado — no hay integración con WhatsApp Business API (eso es otro nivel de complejidad/costo, normalmente no hace falta para este tamaño de negocio).
 - Fotos de producto y de promos: se suben directo como archivo desde `admin.html` (ver sección "Habilitar Storage" más arriba) — no hace falta pegar ningún link ni subirlas a otro lado antes.

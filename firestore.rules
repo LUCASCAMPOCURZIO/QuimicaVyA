@@ -12,8 +12,24 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Catálogo: cualquiera lo puede leer (incluso sin loguearse). Solo el admin lo edita.
+    // Catálogo: cualquiera lo puede leer (incluso sin loguearse). Solo el admin lo edita
+    // (crea, borra, cambia precio/nombre/foto/etc). La única excepción: un cliente logueado
+    // puede DESCONTAR el campo "stock" al confirmar un pedido (nunca aumentarlo ni tocar nada más).
     match /products/{productId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.keys().hasAll(['stock']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) &&
+        request.resource.data.stock is int &&
+        request.resource.data.stock >= 0 &&
+        request.resource.data.stock <= resource.data.stock
+      );
+    }
+
+    // Promos del carrusel de la home: cualquiera las puede leer. Solo el admin las edita.
+    match /promos/{promoId} {
       allow read: if true;
       allow write: if isAdmin();
     }

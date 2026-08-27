@@ -1,7 +1,7 @@
 import {
   auth, db, APP_CONFIG,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
-  collection, doc, addDoc, setDoc, getDoc, getDocs, query, orderBy, onSnapshot, serverTimestamp,
+  collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc, increment, query, orderBy, onSnapshot, serverTimestamp,
 } from "./firebase-init.js";
 
 // ---------- estado ----------
@@ -162,36 +162,51 @@ function renderProducts() {
   productList.innerHTML = "";
   visible.forEach((p) => {
     const qty = cart[p.id]?.cantidad || 0;
+    const tieneStock = typeof p.stock === "number";
+    const sinStock = tieneStock && p.stock <= 0;
+    const stockBajo = tieneStock && p.stock > 0 && p.stock <= 5;
     const imageHtml = p.imagen
       ? `<img class="product-image" src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}" loading="lazy">`
       : `<div class="product-image-placeholder">🧴</div>`;
+    const stockBadge = sinStock
+      ? `<div class="stock-badge stock-out">Sin stock</div>`
+      : stockBajo
+      ? `<div class="stock-badge stock-low">¡Últimas ${p.stock}!</div>`
+      : "";
 
     const card = document.createElement("div");
-    card.className = "card product-card";
+    card.className = "card product-card" + (sinStock ? " is-out" : "");
     card.innerHTML = `
+      ${stockBadge}
       ${imageHtml}
       <div class="product-body">
         <div class="product-name">${escapeHtml(p.nombre)}</div>
         <div class="product-unit">${escapeHtml(p.unidad || "")}</div>
         <div class="product-price">${APP_CONFIG.moneda}${formatNumber(p.precio)}</div>
         <div class="qty-row">
-          <div class="qty-controls">
-            <button class="qty-btn" data-action="minus">−</button>
-            <span class="qty-value">${qty}</span>
-            <button class="qty-btn" data-action="plus">+</button>
-          </div>
+          ${sinStock
+            ? `<span class="hint-text">No disponible por ahora</span>`
+            : `<div class="qty-controls">
+                <button class="qty-btn" data-action="minus">−</button>
+                <span class="qty-value">${qty}</span>
+                <button class="qty-btn" data-action="plus">+</button>
+              </div>`
+          }
         </div>
       </div>
     `;
-    card.querySelector('[data-action="minus"]').onclick = () => changeQty(p, -1);
-    card.querySelector('[data-action="plus"]').onclick = () => changeQty(p, 1);
+    if (!sinStock) {
+      card.querySelector('[data-action="minus"]').onclick = () => changeQty(p, -1);
+      card.querySelector('[data-action="plus"]').onclick = () => changeQty(p, 1);
+    }
     productList.appendChild(card);
   });
 }
 
 function changeQty(product, delta) {
   const current = cart[product.id]?.cantidad || 0;
-  const next = Math.max(0, current + delta);
+  let next = Math.max(0, current + delta);
+  if (typeof product.stock === "number") next = Math.min(next, product.stock);
   if (next === 0) {
     delete cart[product.id];
   } else {
@@ -290,6 +305,14 @@ async function doCheckout() {
     const mensaje = buildWhatsAppMessage(items, total, nota, currentUser.displayName);
     const url = `https://wa.me/${APP_CONFIG.whatsappNumero}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, "_blank");
+
+    // Descuenta stock solo de los productos que lo tienen controlado (no bloquea el pedido si falla)
+    Object.values(cart).forEach(({ producto, cantidad }) => {
+      if (typeof producto.stock !== "number") return;
+      updateDoc(doc(db, "products", producto.id), { stock: increment(-cantidad) }).catch((err) => {
+        console.error("No se pudo actualizar el stock de", producto.nombre, err);
+      });
+    });
 
     cart = {};
     renderCartFab();

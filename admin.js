@@ -1,7 +1,7 @@
 import {
   auth, db, APP_CONFIG,
   signOut, onAuthStateChanged,
-  collection, doc, addDoc, updateDoc, deleteDoc, getDocs, orderBy, query,
+  collection, doc, addDoc, updateDoc, deleteDoc, deleteField, getDocs, orderBy, query,
   storage, ref, uploadBytes, getDownloadURL,
 } from "./firebase-init.js";
 
@@ -241,6 +241,8 @@ async function loadCatalog() {
   renderCatalogList();
 }
 
+let editingProductId = null;
+
 function renderCatalogList() {
   const list = document.getElementById("catalogList");
   if (allProducts.length === 0) {
@@ -248,71 +250,175 @@ function renderCatalogList() {
     return;
   }
   list.innerHTML = "";
+
+  // Agrupado por categoría (en el orden de config.js, y cualquier categoría vieja al final)
+  const categoriasOrden = [...APP_CONFIG.categorias];
   allProducts.forEach((p) => {
-    const row = document.createElement("div");
-    row.className = "card";
-    row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;";
-    const thumbHtml = p.imagen
-      ? `<img src="${escapeHtml(p.imagen)}" alt="" style="width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;">`
-      : `<div style="width:44px; height:44px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--bg-elev-2); font-size:18px;">🧴</div>`;
-    row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        ${thumbHtml}
-        <div>
-          <div style="font-weight:600;">${escapeHtml(p.nombre)} ${p.activo === false ? '<span class="hint-text">(oculto)</span>' : ""}</div>
-          <div class="hint-text">${escapeHtml(p.categoria)} · ${APP_CONFIG.moneda}${formatNumber(p.precio)} ${p.unidad ? "· " + escapeHtml(p.unidad) : ""}</div>
-        </div>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-outline btn-sm" data-action="toggle">${p.activo === false ? "Mostrar" : "Ocultar"}</button>
-        <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
-      </div>
-    `;
-    row.querySelector('[data-action="toggle"]').onclick = async () => {
-      const nuevoEstado = p.activo === false ? true : false;
-      await updateDoc(doc(db, "products", p.id), { activo: nuevoEstado });
-      p.activo = nuevoEstado;
-      renderCatalogList();
-    };
-    row.querySelector('[data-action="delete"]').onclick = async () => {
-      if (!confirm(`¿Eliminar "${p.nombre}" del catálogo?`)) return;
-      await deleteDoc(doc(db, "products", p.id));
-      allProducts = allProducts.filter((x) => x.id !== p.id);
-      renderCatalogList();
-      showToast("Producto eliminado");
-    };
-    list.appendChild(row);
+    if (!categoriasOrden.includes(p.categoria)) categoriasOrden.push(p.categoria);
+  });
+
+  categoriasOrden.forEach((cat) => {
+    const productosCat = allProducts.filter((p) => p.categoria === cat);
+    if (productosCat.length === 0) return;
+
+    const header = document.createElement("div");
+    header.className = "section-title";
+    header.style.cssText = "margin-top:18px; display:flex; align-items:center; justify-content:space-between;";
+    header.innerHTML = `<span>${escapeHtml(cat)}</span><span class="hint-text" style="text-transform:none; letter-spacing:0;">${productosCat.length}</span>`;
+    list.appendChild(header);
+
+    productosCat.forEach((p) => list.appendChild(buildProductRow(p)));
   });
 }
 
-document.getElementById("productForm").addEventListener("submit", async (e) => {
+function buildProductRow(p) {
+  const row = document.createElement("div");
+  row.className = "card";
+  row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;";
+  const thumbHtml = p.imagen
+    ? `<img src="${escapeHtml(p.imagen)}" alt="" style="width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;">`
+    : `<div style="width:44px; height:44px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--bg-elev-2); font-size:18px;">🧴</div>`;
+
+  const tieneStock = typeof p.stock === "number";
+  const stockHtml = tieneStock
+    ? `<div style="display:flex; align-items:center; gap:6px;">
+        <button class="btn btn-outline btn-sm" data-action="stock-minus" style="padding:2px 10px;">−</button>
+        <span style="min-width:26px; text-align:center; font-weight:700; ${p.stock <= 0 ? "color:var(--text-dim);" : ""}">${p.stock}</span>
+        <button class="btn btn-outline btn-sm" data-action="stock-plus" style="padding:2px 10px;">+</button>
+      </div>`
+    : "";
+
+  row.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px;">
+      ${thumbHtml}
+      <div>
+        <div style="font-weight:600;">${escapeHtml(p.nombre)} ${p.activo === false ? '<span class="hint-text">(oculto)</span>' : ""}</div>
+        <div class="hint-text">${APP_CONFIG.moneda}${formatNumber(p.precio)} ${p.unidad ? "· " + escapeHtml(p.unidad) : ""} ${tieneStock ? (p.stock <= 0 ? "· sin stock" : "") : ""}</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      ${stockHtml}
+      <button class="btn btn-outline btn-sm" data-action="edit">Editar</button>
+      <button class="btn btn-outline btn-sm" data-action="toggle">${p.activo === false ? "Mostrar" : "Ocultar"}</button>
+      <button class="btn btn-danger btn-sm" data-action="delete">Eliminar</button>
+    </div>
+  `;
+
+  if (tieneStock) {
+    row.querySelector('[data-action="stock-minus"]').onclick = async () => {
+      const nuevo = Math.max(0, p.stock - 1);
+      await updateDoc(doc(db, "products", p.id), { stock: nuevo });
+      p.stock = nuevo;
+      renderCatalogList();
+    };
+    row.querySelector('[data-action="stock-plus"]').onclick = async () => {
+      const nuevo = p.stock + 1;
+      await updateDoc(doc(db, "products", p.id), { stock: nuevo });
+      p.stock = nuevo;
+      renderCatalogList();
+    };
+  }
+  row.querySelector('[data-action="edit"]').onclick = () => fillProductFormForEdit(p);
+  row.querySelector('[data-action="toggle"]').onclick = async () => {
+    const nuevoEstado = p.activo === false ? true : false;
+    await updateDoc(doc(db, "products", p.id), { activo: nuevoEstado });
+    p.activo = nuevoEstado;
+    renderCatalogList();
+  };
+  row.querySelector('[data-action="delete"]').onclick = async () => {
+    if (!confirm(`¿Eliminar "${p.nombre}" del catálogo?`)) return;
+    await deleteDoc(doc(db, "products", p.id));
+    allProducts = allProducts.filter((x) => x.id !== p.id);
+    if (editingProductId === p.id) cancelProductEdit();
+    renderCatalogList();
+    showToast("Producto eliminado");
+  };
+
+  return row;
+}
+
+// ---------- edición de producto ----------
+const productForm = document.getElementById("productForm");
+const productSubmitBtn = document.getElementById("productSubmitBtn");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
+const catalogFormTitle = document.getElementById("catalogFormTitle");
+const pImagenPreview = document.getElementById("pImagenPreview");
+
+function fillProductFormForEdit(p) {
+  editingProductId = p.id;
+  document.getElementById("pEditId").value = p.id;
+  document.getElementById("pNombre").value = p.nombre || "";
+  document.getElementById("pCategoria").value = p.categoria || "";
+  document.getElementById("pPrecio").value = p.precio ?? "";
+  document.getElementById("pUnidad").value = p.unidad || "";
+  document.getElementById("pStock").value = typeof p.stock === "number" ? p.stock : "";
+  document.getElementById("pImagenFile").value = "";
+  if (p.imagen) {
+    pImagenPreview.src = p.imagen;
+    pImagenPreview.style.display = "block";
+  } else {
+    pImagenPreview.style.display = "none";
+  }
+  catalogFormTitle.textContent = `Editando "${p.nombre}"`;
+  productSubmitBtn.textContent = "Guardar cambios";
+  cancelEditBtn.style.display = "inline-flex";
+  productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelProductEdit() {
+  editingProductId = null;
+  productForm.reset();
+  document.getElementById("pEditId").value = "";
+  pImagenPreview.style.display = "none";
+  catalogFormTitle.textContent = "Agregar producto";
+  productSubmitBtn.textContent = "Agregar al catálogo";
+  cancelEditBtn.style.display = "none";
+}
+
+cancelEditBtn.onclick = () => cancelProductEdit();
+
+productForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const nombre = document.getElementById("pNombre").value.trim();
   const categoria = document.getElementById("pCategoria").value;
   const precio = parseFloat(document.getElementById("pPrecio").value);
   const unidad = document.getElementById("pUnidad").value.trim();
+  const stockRaw = document.getElementById("pStock").value.trim();
+  const stock = stockRaw === "" ? null : Math.max(0, parseInt(stockRaw, 10));
   const file = document.getElementById("pImagenFile").files[0];
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  const textoOriginal = submitBtn.textContent;
+  const submitBtn = productSubmitBtn;
 
   try {
-    let imagen = "";
+    submitBtn.disabled = true;
+
+    let imagen;
     if (file) {
-      submitBtn.disabled = true;
       submitBtn.textContent = "Subiendo foto...";
       imagen = await uploadImage(file, "productos");
     }
-    await addDoc(collection(db, "products"), { nombre, categoria, precio, unidad, imagen, activo: true });
-    showToast("Producto agregado");
-    e.target.reset();
-    document.getElementById("pImagenPreview").style.display = "none";
+
+    if (editingProductId) {
+      const cambios = { nombre, categoria, precio, unidad };
+      if (imagen) cambios.imagen = imagen;
+      if (stock === null) cambios.stock = deleteField();
+      else cambios.stock = stock;
+      await updateDoc(doc(db, "products", editingProductId), cambios);
+      showToast("Producto actualizado");
+    } else {
+      const nuevo = { nombre, categoria, precio, unidad, imagen: imagen || "", activo: true };
+      if (stock !== null) nuevo.stock = stock;
+      await addDoc(collection(db, "products"), nuevo);
+      showToast("Producto agregado");
+    }
+
+    cancelProductEdit();
     await loadCatalog();
   } catch (err) {
-    console.error("Error al agregar producto:", err);
-    showToast("No se pudo subir la foto o guardar el producto. Probá de nuevo.");
+    console.error("Error al guardar producto:", err);
+    showToast("No se pudo guardar el producto. Probá de nuevo.");
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = textoOriginal;
+    submitBtn.textContent = editingProductId ? "Guardar cambios" : "Agregar al catálogo";
   }
 });
 
