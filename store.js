@@ -264,7 +264,11 @@ function changeQty(product, delta) {
   } else {
     cart[product.id] = { producto: product, cantidad: next };
   }
-  renderProducts();
+  // Solo actualiza el numerito de esta card puntual (no reconstruye toda la grilla,
+  // así las fotos de los demás productos no parpadean/recargan en cada click).
+  const card = productList.querySelector(`[data-product-id="${product.id}"] .qty-value`);
+  if (card) card.textContent = next;
+  else renderProducts(); // por si esta card no está en el DOM actual (ej: cambió el filtro), reconstruye
   renderCartFab();
 }
 
