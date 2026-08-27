@@ -5,7 +5,7 @@ service cloud.firestore {
     // ⚠️ Repetí acá los mismos emails que pusiste en config.js → APP_CONFIG.adminEmails
     function isAdmin() {
       return request.auth != null &&
-        request.auth.token.email in ["dueño@ejemplo.com"];
+        request.auth.token.email in ["lucas.campo@hotmail.com.ar"];
     }
 
     function isSignedIn() {
@@ -14,12 +14,6 @@ service cloud.firestore {
 
     // Catálogo: cualquiera lo puede leer (incluso sin loguearse). Solo el admin lo edita.
     match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Promos del carrusel de la home: cualquiera las puede leer. Solo el admin las edita.
-    match /promos/{promoId} {
       allow read: if true;
       allow write: if isAdmin();
     }
