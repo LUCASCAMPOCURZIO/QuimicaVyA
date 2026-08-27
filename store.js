@@ -354,6 +354,7 @@ async function doCheckout() {
       productId: producto.id,
       nombre: producto.nombre,
       precio: producto.precio,
+      imagen: producto.imagen || "",
       cantidad,
       subtotal: cantidad * producto.precio,
     }));

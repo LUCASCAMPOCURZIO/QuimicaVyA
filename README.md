@@ -21,14 +21,24 @@ Las estadísticas del hero (cantidad de productos y categorías) son reales — 
 
 - `nombreNegocio`: nombre que se ve en la tienda.
 - `whatsappNumero`: número de WhatsApp del negocio, con código de país, sin `+` ni espacios (ej: `5491155555555`).
-- `categorias`: las categorías del catálogo.
+- `categorias`: ya no se usa para mostrar las categorías en la tienda (eso ahora se administra desde `admin.html`, ver sección "Categorías" más abajo) — solo sirve como semilla la primera vez que abrís el panel después de esta actualización.
 - `adminEmails`: el/los email(s) que van a poder entrar a `admin.html`. Ese email tiene que registrarse como cliente normal desde la tienda (con "Registrarme").
 
 ## 3. Reglas de seguridad
 
 Copiá `firestore.rules` en Firebase Console → Firestore Database → Reglas (o hacé deploy con la CLI). **Importante:** el email de `adminEmails` tiene que estar repetido ahí adentro también (está comentado en el archivo).
 
-⚠️ Si ya tenías las reglas viejas publicadas (de antes de que existiera el carrusel de promos), tenés que volver a pegar el `firestore.rules` actualizado y publicar de nuevo — si no, cargar promos desde `admin.html` va a fallar con un error de permisos.
+⚠️ Cada vez que te aviso que `firestore.rules` cambió en una actualización, tenés que volver a pegar el archivo entero en Firebase Console → Firestore Database → Reglas y publicar de nuevo — si no, la funcionalidad nueva de esa actualización va a fallar con un error de permisos.
+
+## Categorías
+
+Las categorías del catálogo (nombre, ícono y orden) se administran desde `admin.html` → pestaña **"Categorías"**, ya no están fijas en `config.js`. Podés agregar, editar, reordenar (con las flechas ↑/↓) y eliminar las que quieras, y cada una tiene su propio ícono a elegir de una lista de dibujitos pensados para un negocio de limpieza — así "Otros" (o cualquier categoría) puede tener un ícono propio en vez de uno genérico.
+
+Un par de cosas a tener en cuenta:
+
+- **Migración automática, una sola vez**: la primera vez que abras `admin.html` después de esta actualización, el sistema importa solo las categorías que ya tenías en `config.js` (con un ícono por defecto para cada una) para no perder nada. Después de esa primera vez, `config.js` ya no se usa más para esto — toda la gestión es desde el panel.
+- Si **editás el nombre** de una categoría, los productos que ya estaban cargados en esa categoría se actualizan solos para seguir apuntando a ella (no quedan huérfanos).
+- Si **eliminás** una categoría que todavía tiene productos cargados, te avisa antes de borrarla — los productos no se borran ni pierden su categoría (el texto queda guardado en cada producto), pero esa categoría deja de aparecer como filtro en la tienda hasta que la vuelvas a cargar o edites esos productos a otra categoría.
 
 ## Habilitar Storage (para poder subir fotos)
 
@@ -89,8 +99,9 @@ En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís 
 
 - `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo, stock }` (`stock` es opcional — si no está, el producto no tiene control de stock)
 - `customers/{uid}`: `{ nombre, telefono, email, fechaAlta }`
-- `orders/{id}`: `{ customerId, customerNombre, customerEmail, items[], total, nota, estado, fecha }`
+- `orders/{id}`: `{ customerId, customerNombre, customerEmail, items[], total, nota, estado, fecha }` (cada item de `items[]` incluye `imagen` — una foto "congelada" del producto en el momento del pedido, para que el pedido siempre muestre lo que se compró aunque después cambies o borres la foto del producto)
 - `promos/{id}`: `{ imagen, texto, orden, activo, productId }` (`productId` es opcional — si está, la promo lleva a ese producto en la tienda)
+- `categories/{id}`: `{ nombre, icono, orden }`
 
 ## Cosas para charlar con el cliente / posibles mejoras después
 

@@ -151,7 +151,23 @@ function renderOrdersAdmin() {
     const badgeClass = order.estado === "confirmado" ? "badge-confirmed" : "badge-pending";
     const badgeText = order.estado === "confirmado" ? "Confirmado" : "Pendiente";
     const itemsHtml = (order.items || [])
-      .map((i) => `<div class="cart-line"><span>${escapeHtml(i.nombre)} x${i.cantidad}</span><span>${APP_CONFIG.moneda}${formatNumber(i.subtotal)}</span></div>`)
+      .map((i) => {
+        // Preferimos la foto guardada en el momento del pedido (así el pedido queda como una
+        // "foto" fiel de lo que se compró); si es un pedido viejo de antes de este cambio,
+        // probamos con la foto actual del producto como respaldo.
+        const productoActual = allProducts.find((p) => p.id === i.productId);
+        const imagenSrc = i.imagen || productoActual?.imagen || "";
+        const thumbHtml = imagenSrc
+          ? `<img class="order-item-thumb" src="${escapeHtml(imagenSrc)}" alt="">`
+          : `<div class="order-item-thumb-placeholder">🧴</div>`;
+        return `
+          <div class="order-item-line">
+            ${thumbHtml}
+            <span class="order-item-name">${escapeHtml(i.nombre)} x${i.cantidad}</span>
+            <span class="order-item-price">${APP_CONFIG.moneda}${formatNumber(i.subtotal)}</span>
+          </div>
+        `;
+      })
       .join("");
 
     const card = document.createElement("div");
@@ -272,6 +288,7 @@ async function loadCatalog() {
   renderCatalogList();
   populatePromoProductSelect();
   renderPromoList(); // refresca el nombre del producto vinculado por si cambió
+  renderOrdersAdmin(); // refresca las fotos de respaldo de pedidos viejos por si cargó después
 }
 
 let editingProductId = null;
