@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ⚠️ Repetí acá el mismo email que pusiste en config.js → APP_CONFIG.adminEmails
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email in ["lucas.campo@hotmail.com.ar"];
+    }
+
+    // Fotos de productos y de promos: cualquiera las puede ver, solo el admin sube/borra.
+    match /productos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

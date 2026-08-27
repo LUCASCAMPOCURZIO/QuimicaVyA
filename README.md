@@ -30,6 +30,16 @@ Copiá `firestore.rules` en Firebase Console → Firestore Database → Reglas (
 
 ⚠️ Si ya tenías las reglas viejas publicadas (de antes de que existiera el carrusel de promos), tenés que volver a pegar el `firestore.rules` actualizado y publicar de nuevo — si no, cargar promos desde `admin.html` va a fallar con un error de permisos.
 
+## Habilitar Storage (para poder subir fotos)
+
+Las fotos de productos y de promos se suben directo desde `admin.html` (elegís el archivo desde tu compu o celular, no hace falta subirlo a otro lado ni pegar ningún link). Para que esto funcione hay que habilitar un producto más de Firebase, aparte de Authentication y Firestore:
+
+1. En Firebase Console → menú de la izquierda, sección **Build** → **Storage** → botón "Comenzar"/"Get started". Aceptás las reglas por defecto (las vamos a reemplazar en el paso siguiente) y elegís la ubicación (podés dejar la que sugiere).
+2. Una vez creado, andá a la pestaña **Rules** dentro de Storage y pegá el contenido de `storage.rules` (reemplazando lo que haya), igual que hiciste con las reglas de Firestore. **Importante:** ahí también tiene que estar repetido el email de `adminEmails` (está comentado en el archivo).
+3. Listo — ya podés elegir una foto al cargar un producto o una promo en `admin.html`.
+
+La imagen se comprime y redimensiona automáticamente en el navegador antes de subirse (para que no pese de más ni tarde en cargar en la tienda), así que podés sacar la foto directo con el celular sin preocuparte por el tamaño.
+
 ## Carrusel de promos
 
 En `admin.html` → pestaña **"Promos"** cargás imágenes (idealmente horizontales/apaisadas) con un texto opcional superpuesto y un orden. Van pasando solas cada ~4 segundos en la home, con flechas y puntitos para navegar a mano, y también se puede deslizar con el dedo en el celular. Si no cargaste ninguna promo, esa sección directamente no aparece — no queda un hueco vacío.
@@ -63,6 +73,7 @@ En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís 
 - `products/{id}`: `{ nombre, categoria, precio, unidad, imagen, activo }`
 - `customers/{uid}`: `{ nombre, telefono, email, fechaAlta }`
 - `orders/{id}`: `{ customerId, customerNombre, customerEmail, items[], total, nota, estado, fecha }`
+- `promos/{id}`: `{ imagen, texto, orden, activo }`
 
 ## Cosas para charlar con el cliente / posibles mejoras después
 
@@ -70,4 +81,4 @@ En el modal de login hay un botón **"¿Olvidaste tu contraseña?"**. Escribís 
 - No hay manejo de stock todavía (no se descuenta inventario). Si lo necesita, se puede agregar.
 - El carrito vive en memoria mientras el cliente navega (no se guarda si cierra la pestaña a mitad de compra). Se puede persistir si hace falta.
 - El WhatsApp es un link `wa.me` con el mensaje pre-armado — no hay integración con WhatsApp Business API (eso es otro nivel de complejidad/costo, normalmente no hace falta para este tamaño de negocio).
-- Fotos de producto: ya se pueden cargar (campo "URL de la foto" al agregar un producto en `admin.html`). Hay que subir la foto a algún lugar que te dé un link directo a la imagen (Imgur, Google Fotos con "compartir públicamente", etc.) y pegar ese link — no se suben archivos directo a Firebase todavía.
+- Fotos de producto y de promos: se suben directo como archivo desde `admin.html` (ver sección "Habilitar Storage" más arriba) — no hace falta pegar ningún link ni subirlas a otro lado antes.

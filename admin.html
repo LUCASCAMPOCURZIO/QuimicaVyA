@@ -83,9 +83,9 @@
           <input type="text" id="pUnidad">
         </div>
         <div class="field">
-          <label for="pImagen">URL de la foto (opcional)</label>
-          <input type="url" id="pImagen" placeholder="https://...">
-          <div class="hint-text" style="margin-top:6px;">Subí la foto a algún lugar (Google Fotos, Imgur, WhatsApp Web, etc.), copiá el link de la imagen y pegalo acá.</div>
+          <label for="pImagenFile">Foto del producto (opcional)</label>
+          <input type="file" id="pImagenFile" accept="image/*">
+          <img id="pImagenPreview" style="display:none; margin-top:8px; max-width:140px; border-radius:10px;" alt="Vista previa">
         </div>
         <button class="btn" type="submit" style="width:100%;">Agregar al catálogo</button>
       </form>
@@ -101,9 +101,10 @@
       <div class="section-title" style="margin-top:0;">Agregar promo</div>
       <form id="promoForm">
         <div class="field">
-          <label for="promoImagen">URL de la imagen</label>
-          <input type="url" id="promoImagen" placeholder="https://..." required>
-          <div class="hint-text" style="margin-top:6px;">Usá una imagen bien horizontal (apaisada) para que se vea bien en el carrusel — subila a algún lugar que te dé un link directo (Imgur, Google Fotos, etc.) y pegalo acá.</div>
+          <label for="promoImagenFile">Imagen de la promo</label>
+          <input type="file" id="promoImagenFile" accept="image/*" required>
+          <div class="hint-text" style="margin-top:6px;">Usá una foto bien horizontal (apaisada) para que se vea bien en el carrusel.</div>
+          <img id="promoImagenPreview" style="display:none; margin-top:8px; max-width:220px; border-radius:10px;" alt="Vista previa">
         </div>
         <div class="field">
           <label for="promoTexto">Texto sobre la imagen (opcional)</label>

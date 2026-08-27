@@ -2,6 +2,7 @@ import {
   auth, db, APP_CONFIG,
   signOut, onAuthStateChanged,
   collection, doc, addDoc, updateDoc, deleteDoc, getDocs, orderBy, query,
+  storage, ref, uploadBytes, getDownloadURL,
 } from "./firebase-init.js";
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
@@ -15,6 +16,67 @@ function showToast(msg) {
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 2600);
 }
+
+// ---------- fotos: achicar en el navegador y subir a Firebase Storage ----------
+function resizeImageFile(file, maxDim = 1280, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round(height * (maxDim / width));
+          width = maxDim;
+        } else {
+          width = Math.round(width * (maxDim / height));
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(objectUrl);
+          blob ? resolve(blob) : reject(new Error("No se pudo procesar la imagen"));
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("No se pudo leer la imagen"));
+    };
+    img.src = objectUrl;
+  });
+}
+
+async function uploadImage(file, folder) {
+  const blob = await resizeImageFile(file);
+  const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const storageRef = ref(storage, filename);
+  await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
+  return getDownloadURL(storageRef);
+}
+
+function wirePreview(fileInputId, previewImgId) {
+  const input = document.getElementById(fileInputId);
+  const preview = document.getElementById(previewImgId);
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) {
+      preview.style.display = "none";
+      return;
+    }
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  });
+}
+wirePreview("pImagenFile", "pImagenPreview");
+wirePreview("promoImagenFile", "promoImagenPreview");
 
 // ---------- tabs ----------
 const tabs = document.querySelectorAll(".tabs .tab");
@@ -229,12 +291,29 @@ document.getElementById("productForm").addEventListener("submit", async (e) => {
   const categoria = document.getElementById("pCategoria").value;
   const precio = parseFloat(document.getElementById("pPrecio").value);
   const unidad = document.getElementById("pUnidad").value.trim();
-  const imagen = document.getElementById("pImagen").value.trim();
+  const file = document.getElementById("pImagenFile").files[0];
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const textoOriginal = submitBtn.textContent;
 
-  await addDoc(collection(db, "products"), { nombre, categoria, precio, unidad, imagen, activo: true });
-  showToast("Producto agregado");
-  e.target.reset();
-  await loadCatalog();
+  try {
+    let imagen = "";
+    if (file) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Subiendo foto...";
+      imagen = await uploadImage(file, "productos");
+    }
+    await addDoc(collection(db, "products"), { nombre, categoria, precio, unidad, imagen, activo: true });
+    showToast("Producto agregado");
+    e.target.reset();
+    document.getElementById("pImagenPreview").style.display = "none";
+    await loadCatalog();
+  } catch (err) {
+    console.error("Error al agregar producto:", err);
+    showToast("No se pudo subir la foto o guardar el producto. Probá de nuevo.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = textoOriginal;
+  }
 });
 
 // ---------- promos del carrusel ----------
@@ -289,15 +368,34 @@ function renderPromoList() {
 
 document.getElementById("promoForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const imagen = document.getElementById("promoImagen").value.trim();
+  const file = document.getElementById("promoImagenFile").files[0];
   const texto = document.getElementById("promoTexto").value.trim();
   const ordenRaw = document.getElementById("promoOrden").value.trim();
   const orden = ordenRaw ? parseInt(ordenRaw, 10) : 0;
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const textoOriginal = submitBtn.textContent;
 
-  await addDoc(collection(db, "promos"), { imagen, texto, orden, activo: true });
-  showToast("Promo agregada");
-  e.target.reset();
-  await loadPromos();
+  if (!file) {
+    showToast("Elegí una imagen primero.");
+    return;
+  }
+
+  try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Subiendo imagen...";
+    const imagen = await uploadImage(file, "promos");
+    await addDoc(collection(db, "promos"), { imagen, texto, orden, activo: true });
+    showToast("Promo agregada");
+    e.target.reset();
+    document.getElementById("promoImagenPreview").style.display = "none";
+    await loadPromos();
+  } catch (err) {
+    console.error("Error al agregar promo:", err);
+    showToast("No se pudo subir la imagen. Probá de nuevo.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = textoOriginal;
+  }
 });
 
 // ---------- utils ----------
