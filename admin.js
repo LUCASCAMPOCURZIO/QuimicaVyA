@@ -17,6 +17,42 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2600);
 }
 
+// ---------- lightbox de imagen (ampliar fotos para verificar el producto) ----------
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxClose = document.getElementById("lightboxClose");
+
+function openLightbox(src, caption) {
+  if (!src) return;
+  lightboxImg.src = src;
+  lightboxImg.alt = caption || "";
+  lightboxCaption.textContent = caption || "";
+  lightboxOverlay.classList.add("open");
+}
+function closeLightbox() {
+  lightboxOverlay.classList.remove("open");
+  lightboxImg.src = "";
+}
+lightboxClose.onclick = closeLightbox;
+lightboxOverlay.addEventListener("click", (e) => {
+  if (e.target === lightboxOverlay) closeLightbox();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && lightboxOverlay.classList.contains("open")) closeLightbox();
+});
+
+// Marca como "clickeable para ampliar" cualquier foto que tenga data-lightbox-src
+function wireLightboxThumbs(container) {
+  container.querySelectorAll("[data-lightbox-src]").forEach((el) => {
+    el.style.cursor = "zoom-in";
+    el.onclick = (e) => {
+      e.stopPropagation();
+      openLightbox(el.dataset.lightboxSrc, el.dataset.lightboxCaption || "");
+    };
+  });
+}
+
 // ---------- fotos: achicar en el navegador y subir a Firebase Storage ----------
 function resizeImageFile(file, maxDim = 1280, quality = 0.82) {
   return new Promise((resolve, reject) => {
@@ -158,7 +194,7 @@ function renderOrdersAdmin() {
         const productoActual = allProducts.find((p) => p.id === i.productId);
         const imagenSrc = i.imagen || productoActual?.imagen || "";
         const thumbHtml = imagenSrc
-          ? `<img class="order-item-thumb" src="${escapeHtml(imagenSrc)}" alt="">`
+          ? `<img class="order-item-thumb" src="${escapeHtml(imagenSrc)}" alt="" data-lightbox-src="${escapeHtml(imagenSrc)}" data-lightbox-caption="${escapeHtml(i.nombre)}">`
           : `<div class="order-item-thumb-placeholder">🧴</div>`;
         return `
           <div class="order-item-line">
@@ -221,6 +257,7 @@ function renderOrdersAdmin() {
       renderStats();
       showToast("Pedido eliminado");
     });
+    wireLightboxThumbs(card);
     list.appendChild(card);
   });
 }
@@ -327,7 +364,7 @@ function buildProductRow(p) {
   row.className = "card";
   row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;";
   const thumbHtml = p.imagen
-    ? `<img src="${escapeHtml(p.imagen)}" alt="" style="width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;">`
+    ? `<img src="${escapeHtml(p.imagen)}" alt="" style="width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;" data-lightbox-src="${escapeHtml(p.imagen)}" data-lightbox-caption="${escapeHtml(p.nombre)}">`
     : `<div style="width:44px; height:44px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--bg-elev-2); font-size:18px;">🧴</div>`;
 
   const tieneStock = typeof p.stock === "number";
@@ -385,6 +422,7 @@ function buildProductRow(p) {
     showToast("Producto eliminado");
   };
 
+  wireLightboxThumbs(row);
   return row;
 }
 
@@ -515,7 +553,7 @@ function renderPromoList() {
     row.style.cssText = "padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;";
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <img src="${escapeHtml(p.imagen)}" alt="" style="width:64px; height:40px; border-radius:8px; object-fit:cover; flex-shrink:0;">
+        <img src="${escapeHtml(p.imagen)}" alt="" style="width:64px; height:40px; border-radius:8px; object-fit:cover; flex-shrink:0;" data-lightbox-src="${escapeHtml(p.imagen)}" data-lightbox-caption="${escapeHtml(p.texto || "Promo")}">
         <div style="min-width:0;">
           <div style="font-weight:600;">${p.texto ? escapeHtml(p.texto) : '<span class="hint-text">(sin texto)</span>'} ${p.activo === false ? '<span class="hint-text">(oculta)</span>' : ""}</div>
           <div class="hint-text">Orden: ${p.orden || 0}${productoVinculado ? " · lleva a: " + escapeHtml(productoVinculado.nombre) : (p.productId ? " · el producto vinculado ya no existe" : "")}</div>
@@ -542,6 +580,7 @@ function renderPromoList() {
       renderPromoList();
       showToast("Promo eliminada");
     };
+    wireLightboxThumbs(row);
     list.appendChild(row);
   });
 }
